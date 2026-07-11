@@ -41,13 +41,11 @@ SAVE_EVERY_STEPS = 100_000
 
 E3T_EPSILON     = 0.5
 FROZEN_REFRESH  = 200_000
-SCRIPTED_PARTNER_FRAC = 0.15
-
-# --- Shaping anti-atasco / progreso (idea adaptada de DoomBot) ---
+SCRIPTED_PARTNER_FRAC = 0.5   # mas exposicion a un companero greedy competente -> bootstrapea la tarea (ver soup completarse)
 # Reward auxiliar que empuja al agente a NO quedarse pasivo/ciclando (debilidad medida: 0 sopas
 # en solitario). Se aplica solo cuando NO hubo progreso real de la tarea y se annela junto al
 # shaping (via shaping_coef) para no contaminar el objetivo cooperativo.
-PROGRESS_SHAPING = True
+PROGRESS_SHAPING = False   # OFF por defecto: la novedad empuja a explorar y en Overcooked lo optimo es acampar en ollas/dispensadores
 NOVELTY_BONUS    = 0.02   # bono por pisar una celda nueva en el episodio (exploracion)
 STUCK_PEN        = 0.05   # penalizacion/paso cuando el estado (pos,orient,objeto) no cambia
 STUCK_STEPS      = 8      # nº de pasos idénticos para considerarse "atascado"
@@ -59,7 +57,7 @@ WATCHDOG_STEPS   = 10
 
 LR = 2.5e-4; N_STEPS = 400; N_EPOCHS = 10; CLIP = 0.2; GAMMA = 0.99; GAE = 0.95
 ENT0, ENT1 = 0.10, 0.01
-SHAPING_END_FRAC = 0.6
+SHAPING_END_FRAC = 1.0   # el shaped es la unica senal de la tarea; annelar tan pronto deja al agente sin guia
 
 KNOWN_LAYOUTS   = ["cramped_room", "asymmetric_advantages", "coordination_ring"]
 HELDOUT_LAYOUTS = ["counter_circuit", "forced_coordination"]
