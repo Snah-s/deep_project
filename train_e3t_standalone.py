@@ -43,6 +43,20 @@ E3T_EPSILON     = 0.5
 FROZEN_REFRESH  = 200_000
 SCRIPTED_PARTNER_FRAC = 0.15
 
+# --- Shaping anti-atasco / progreso (idea adaptada de DoomBot) ---
+# Reward auxiliar que empuja al agente a NO quedarse pasivo/ciclando (debilidad medida: 0 sopas
+# en solitario). Se aplica solo cuando NO hubo progreso real de la tarea y se annela junto al
+# shaping (via shaping_coef) para no contaminar el objetivo cooperativo.
+PROGRESS_SHAPING = True
+NOVELTY_BONUS    = 0.02   # bono por pisar una celda nueva en el episodio (exploracion)
+STUCK_PEN        = 0.05   # penalizacion/paso cuando el estado (pos,orient,objeto) no cambia
+STUCK_STEPS      = 8      # nº de pasos idénticos para considerarse "atascado"
+
+# --- Watchdog anti-ciclo del StudentAgent entregable (fallback §6.6, idea de DoomBot) ---
+# Si la obs no cambia durante WATCHDOG_STEPS pasos, el agente esta ciclando -> inyecta una
+# accion de escape para romper el bucle (protege contra el peor caso: score 0 por quedarse quieto).
+WATCHDOG_STEPS   = 10
+
 LR = 2.5e-4; N_STEPS = 400; N_EPOCHS = 10; CLIP = 0.2; GAMMA = 0.99; GAE = 0.95
 ENT0, ENT1 = 0.10, 0.01
 SHAPING_END_FRAC = 0.6
@@ -393,8 +407,30 @@ class OvercookedGymEnv(gym.Env):
         self.seat = int(self._rng.integers(0, 2))
         self.partner = make_partner(self.frozen, self._rng)
         self.partner.reset(); self.partner.set_mdp(self.mdp); self.partner.set_agent_index(1 - self.seat)
+        self._visited = set(); self._last_sig = None; self._stuck = 0  # tracking anti-atasco
         obs = encode_padded(self.mdp, self.oc.state, self.seat)
         return obs, {"layout": self.layout, "seat": self.seat}
+
+    def _aux_reward(self, next_state, sparse_team, shaped_own):
+        """Reward de exploracion/anti-atasco (solo si no hubo progreso real de la tarea)."""
+        if not PROGRESS_SHAPING or sparse_team != 0 or shaped_own != 0:
+            self._stuck = 0
+            return 0.0
+        try:
+            p = next_state.players[self.seat]
+            sig = (p.position, p.orientation, None if p.held_object is None else p.held_object.name)
+            aux = 0.0
+            if p.position not in self._visited:
+                self._visited.add(p.position); aux += NOVELTY_BONUS
+            if sig == self._last_sig:
+                self._stuck += 1
+                if self._stuck >= STUCK_STEPS: aux -= STUCK_PEN
+            else:
+                self._stuck = 0
+            self._last_sig = sig
+            return aux
+        except Exception:
+            return 0.0
 
     def step(self, action):
         state = self.oc.state
@@ -403,7 +439,8 @@ class OvercookedGymEnv(gym.Env):
         joint = [None, None]; joint[self.seat] = our; joint[1 - self.seat] = p_act
         next_state, sparse_team, done, info = self.oc.step(tuple(joint))
         shaped_own = float(info["shaped_r_by_agent"][self.seat])
-        reward = float(sparse_team) + self.shaping_coef * shaped_own
+        aux = self._aux_reward(next_state, sparse_team, shaped_own)   # anti-atasco (DoomBot)
+        reward = float(sparse_team) + self.shaping_coef * (shaped_own + aux)  # aux se annela con el shaping
         obs = encode_padded(self.mdp, next_state, self.seat)
         info["sparse_team"] = float(sparse_team)
         return obs, reward, bool(done), False, info
@@ -576,6 +613,7 @@ STUDENT_SRC = r'''
 # StudentAgent E3T-lite: politica PPO (SB3) + fallback en capas.
 from __future__ import annotations
 import json, os
+from collections import deque
 import numpy as np
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -606,6 +644,9 @@ class StudentAgent:
         with open(os.path.join(_HERE, "e3t_meta.json")) as f:
             self.meta = json.load(f)
         self.C, self.P0, self.P1 = self.meta["C"], self.meta["P0"], self.meta["P1"]
+        self.watchdog_steps = int(self.meta.get("watchdog_steps", 10))
+        self._hist = deque(maxlen=self.watchdog_steps)
+        self._break_i = 0
         self.model = None
         try:
             from stable_baselines3 import PPO
@@ -622,6 +663,7 @@ class StudentAgent:
             print("StudentAgent: no se pudo cargar el modelo, uso fallback:", repr(exc))
 
     def reset(self):
+        self._hist.clear(); self._break_i = 0
         if self.model is not None:
             try:
                 self.model.predict(np.zeros((1, self.C, self.P0, self.P1), np.float32), deterministic=True)
@@ -641,7 +683,13 @@ class StudentAgent:
             arr = obs["obs"] if isinstance(obs, dict) else obs
             x = self._pad(arr)
             a, _ = self.model.predict(x[None], deterministic=True)
-            return int(a[0])
+            action = int(a[0])
+            # Watchdog anti-ciclo (idea de DoomBot): si la obs no cambia por N pasos, romper el bucle.
+            self._hist.append(hash(x.tobytes()))
+            if len(self._hist) == self._hist.maxlen and len(set(self._hist)) == 1:
+                self._break_i = (self._break_i + 1) % 5
+                return [5, 0, 1, 2, 3][self._break_i]  # interact, luego moverse en las 4 direcciones
+            return action
         except Exception:
             return 4  # stay
 '''
@@ -652,7 +700,8 @@ def export_student(out_dir="."):
     shutil.copy(model_zip, os.path.join(out_dir, "e3t_model.zip"))
     with open(os.path.join(out_dir, "e3t_meta.json"), "w") as f:
         json.dump(dict(obs_shape=list(OBS_SHAPE), P0=P0, P1=P1, C=C, horizon=HORIZON,
-                       channels=REF_CHANNELS, train_pool=TRAIN_POOL, heldout=HELDOUT), f, indent=2)
+                       channels=REF_CHANNELS, train_pool=TRAIN_POOL, heldout=HELDOUT,
+                       watchdog_steps=WATCHDOG_STEPS), f, indent=2)
     with open(os.path.join(out_dir, "student_agent_e3t.py"), "w") as f:
         f.write(STUDENT_SRC)
     print("Exportado en", os.path.abspath(out_dir), ": student_agent_e3t.py + e3t_model.zip + e3t_meta.json")
