@@ -1,18 +1,10 @@
 # Proyecto: Overcooked
 
-Primero construiremos un dataset colectivo de partidas en Overcooked-AI. El objetivo es recolectar demostraciones que luego serán usadas para entrenar un primer modelo mediante Imitation Learning.
+Basado en https://github.com/HumanCompatibleAI/overcooked_ai
 
 ## Grabaciones
 
-- Se debe realizar un total de **20 grabaciones**.
-- Cada partida tiene una duración de **250 timesteps** (verifica en el archivo `collect_demonstrations.yaml`, en `environment.horizon: 250`).
-- En total, cada grupo debería aportar `250 x 20 = 5000` transiciones humanas.
-- Las 20 grabaciones deben ser en **10 escenarios distintos**, 2 grabaciones por escenario.
-
-Al ejecutar el código de grabación se crearán las siguientes carpetas:
-
-- `data/demonstrations/`: ahí se guardan los archivos que luego usarás para entrenar tu modelo.
-- `outputs/collect_demonstrations/`: ahí se guardan archivos auxiliares del runner (logs/debug).
+Buscar repositorios en los cuales ya hay data existente compatible con el repositorio base.
 
 ## Agentes
 
