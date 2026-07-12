@@ -33,3 +33,4 @@ dependencies:
       - gymnasium~=1.3
       - torch~=2.13              # inferencia CPU del entregable + entrenamiento
       - opencv-python-headless<4.13  # dependencia de overcooked-ai compatible con numpy<2
+      - tensorboard              # curvas de entrenamiento (opcional; train_ppo lo detecta)

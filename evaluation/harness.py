@@ -113,9 +113,11 @@ def _run_episode(
     agents[test_index] = test_agent
     agents[partner_index] = partner_agent
 
-    # Compañeros aprendidos (checkpoints) necesitan el env para featurizar.
-    if hasattr(partner, "bind_env"):
-        partner.bind_env(env)
+    # Agentes aprendidos (checkpoints) necesitan el env para featurizar — tanto si son
+    # el agente evaluado como el compañero.
+    for obj in (test_obj, partner):
+        if hasattr(obj, "bind_env"):
+            obj.bind_env(env)
 
     for idx, agent in enumerate(agents):
         agent.reset()

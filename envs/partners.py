@@ -161,8 +161,14 @@ class CheckpointAgent(Agent):
             self._model = PPO.load(self.path, device="cpu")
 
     def bind_env(self, env):
-        """Enlaza el OvercookedEnv del profesor para poder featurizar estados."""
+        """Enlaza el OvercookedEnv y carga el modelo AQUÍ (fuera del timing de act).
+
+        Cargar el modelo dentro de action() sería fatal: el harness envuelve al agente
+        en SafeActionWrapper (SIGALRM a 100 ms) y PPO.load tarda más que eso; el SIGALRM
+        interrumpiría una llamada C de torch -> segfault. Por eso se carga en el binding.
+        """
         self._env = env
+        self._lazy_load()
 
     def action(self, state):
         from src.constants import action_index_to_overcooked_action

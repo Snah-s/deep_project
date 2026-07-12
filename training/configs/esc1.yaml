@@ -1,0 +1,46 @@
+# esc1.yaml — Escenario 1: PPO vs greedy (PLAN.md Etapa 3)
+#
+# Hiperparámetros BASE del PLAN. No cambiar sin registrar el motivo en EXPERIMENTS.md
+# (regla 9). Las "perillas" permitidas si el GATE 3 no pasa: (a) subir shaping.anneal_fraction
+# a 0.8, luego (b) duplicar total_timesteps. Solo esas, en ese orden.
+
+experiment_name: esc1_greedy
+layout: cramped_room          # piloto; cambiar con --layout <nombre o archivo.layout>
+partner_spec: {type: greedy}
+randomize_index: true         # cubre el role-swap de la competencia
+old_dynamics: true
+horizon: 250
+
+total_timesteps: 5000000      # 5e6
+n_envs: 8                     # SubprocVecEnv local / DummyVecEnv si falla en Colab
+vec: subproc                  # subproc | dummy
+checkpoint_freq: 500000       # guarda checkpoint periódico (resiliencia Colab: se desconecta)
+device: auto                  # auto|cpu|cuda. MlpPolicy(96) es pequeña: la GPU aporta poco;
+                              # el cuello de botella es el step del entorno (CPU). n_envs manda.
+seed: 0
+
+ppo:
+  policy: MlpPolicy
+  net_arch: [256, 256]        # 2x256
+  activation: tanh
+  learning_rate: 3.0e-4       # con decaimiento lineal (lr_schedule)
+  lr_schedule: linear
+  ent_coef: 0.05              # bajar a 0.01 cuando la política ya entregue sopas (anotar)
+  gamma: 0.99
+  gae_lambda: 0.95
+  n_steps: 1024               # buffer = n_steps*n_envs = 8192, divisible por batch_size (4 minibatches)
+  batch_size: 2048
+  n_epochs: 8
+  clip_range: 0.2             # default SB3 (no lo fija el PLAN)
+  vf_coef: 0.5                # default SB3
+  max_grad_norm: 0.5          # default SB3
+
+shaping:
+  anneal_fraction: 0.6        # shaped reward anealado 1.0->0.0 hasta el 60% de los pasos
+
+eval:                          # EvalCallback propio: usa el harness oficial (Etapa 2)
+  freq: 250000                # cada 250k pasos
+  seeds: [67, 68, 69]
+  partner_spec: {type: greedy}
+
+output_dir: outputs/esc1

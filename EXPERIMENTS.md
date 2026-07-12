@@ -82,3 +82,39 @@ casos del GATE quedan cubiertos.
 > Estas cifras son el umbral a batir en la Etapa 3 (`harness(agente) ≥ harness(greedy,greedy)`).
 > OJO: en `cramped_room` y `forced_coordination` el baseline greedy es 0, así que ahí basta
 > con que el agente entrenado entregue ≥1 sopa para superarlo.
+
+---
+
+## Etapa 3 — Agente Escenario 1 (PPO vs greedy) — CÓDIGO LISTO, entreno pendiente (2026-07-12)
+
+Esta máquina NO tiene GPU: aquí se preparó y validó el pipeline; el entreno real de 5e6
+pasos corre en **Colab** (`colab/run_all.ipynb`) o en la **máquina con GPU** (12 GB).
+
+- **`training/train_ppo.py`** (CLI + YAML): construye `OvercookedEgoEnv` vectorizado
+  (Subproc/Dummy), PPO `MlpPolicy` 2×256 tanh, lr 3e-4 lineal, ent 0.05, γ0.99, λ0.95,
+  n_steps 1024, batch 2048, n_epochs 8. Compañero greedy, `randomize_index=True`.
+- **`training/callbacks.py`**: `ScoreEvalCallback` evalúa con el **harness oficial** cada
+  250k pasos y guarda `best_model` por **score** (no reward); `ShapingAnnealCallback` empuja
+  el paso global para anealar el shaped reward; `SB3PolicyStudent` adapta la política a
+  `act(obs)->int`. Se guarda/restaura el RNG global alrededor del eval para no perturbar el entreno.
+- **`training/configs/esc1.yaml`**: hiperparámetros base del PLAN + `checkpoint_freq`.
+- **`colab/run_all.ipynb`**: instalar→reiniciar→GATE 0→Drive→config→entrenar→**evaluar GATE 3**→curva.
+
+### Decisiones registradas
+- **`n_steps=1024`** (el PLAN no lo fija): buffer = 1024·8 = 8192, divisible por batch 2048
+  (4 minibatches). clip_range/vf_coef/max_grad_norm en defaults de SB3.
+- **`tensorboard` opcional**: `train_ppo` lo detecta; se añadió a `environment.yml`.
+- **`device: auto`**: MlpPolicy(96) es diminuta; la GPU aporta poco (el cuello de botella es
+  el step del entorno, CPU). El paralelismo `n_envs` es lo que manda.
+- **Bug corregido (segfault):** `CheckpointAgent` cargaba `PPO.load` dentro de `action()`,
+  que corre bajo el `SafeActionWrapper` (SIGALRM 100 ms); la carga tarda más → SIGALRM
+  interrumpe una llamada C de torch → **segfault**. Fix: cargar en `bind_env`, fuera del timer.
+  Guardado con `tests/test_train_pipeline.py`.
+
+### Validación en CPU (pipeline, NO es el entreno real)
+- Smoke `--smoke` (2000 pasos, 2 envs, dummy, CPU): corre entero, `ScoreEvalCallback` llama
+  al harness, guarda `best_model.zip`/`last_model.zip`/`eval_history.json`/`config_used.yaml`.
+- Suite: **31 passed** (incluye regresión del segfault del checkpoint).
+
+**GATE 3: PENDIENTE** — requiere el entreno real (5e6) en GPU/Colab y luego
+`harness(best_model, greedy) ≥ harness(greedy, greedy)` con `soups_mean ≥ 1` en el layout objetivo.
