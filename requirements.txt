@@ -1,0 +1,14 @@
+# requirements.txt — dependencias Python del camino principal (ver PLAN.md, sección 1)
+#
+# REGLA INVIOLABLE: numpy<2 SIEMPRE primero. El paquete overcooked-ai (PyPI) usa
+# np.Inf, eliminado en NumPy 2.0. En Colab, reiniciar el runtime tras instalar.
+#
+# Uso (vertiente venv/pip):  pip install -r requirements.txt
+# El lockfile exacto se genera tras el primer GATE 0 en verde: pip freeze > requirements.lock
+numpy<2
+overcooked-ai
+stable-baselines3>=2.0
+torch
+gymnasium
+pyyaml
+tqdm

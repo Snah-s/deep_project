@@ -115,9 +115,9 @@ entorno desde `environment.yml`:
 
   ```bash
   ./setup.sh --check    # solo diagnóstico: reporta qué falta, no instala nada (exit 1 si falta algo)
-  ./setup.sh            # instala lo que falte + crea el entorno 'overcooked-agent'
+  ./setup.sh            # instala lo que falte + crea el entorno 'overcooked'
   ./setup.sh --cpu      # igual, pero con torch solo-CPU (máquinas sin GPU NVIDIA)
-  micromamba activate overcooked-agent
+  micromamba activate overcooked
   pytest tests/test_env_smoke.py        # GATE 0
   ```
 

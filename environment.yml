@@ -1,7 +1,7 @@
 # environment.yml — Entorno reproducible con micromamba para el proyecto Overcooked-AI
 #
 # Crear:      micromamba create -f environment.yml -y
-# Activar:    micromamba activate overcooked-agent
+# Activar:    micromamba activate overcooked
 # Verificar:  python tests/test_env_smoke.py   (GATE 0 del PLAN.md)
 #
 # Notas de reproducibilidad:
@@ -15,7 +15,7 @@
 #   parches de seguridad. Para un lockfile exacto: pip freeze > requirements.lock
 #   después del primer GATE 0 en verde, y commitearlo.
 
-name: overcooked-agent
+name: overcooked
 channels:
   - conda-forge
 dependencies:

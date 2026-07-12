@@ -40,7 +40,7 @@ for arg in "$@"; do
 done
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ENV_NAME="overcooked-agent"
+ENV_NAME="overcooked"
 ENV_YML="${REPO_ROOT}/environment.yml"
 
 echo "======================================================================"
