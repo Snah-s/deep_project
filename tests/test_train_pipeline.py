@@ -53,3 +53,22 @@ def test_checkpoint_agent_as_partner(tmp_path):
         seeds=[67],
     )
     assert res["timeouts_total"] == 0
+
+
+def test_finetune_transfers_policy_weights(tmp_path):
+    """Etapa 4: load_policy_weights copia exactamente los pesos de la política."""
+    import torch
+    from training.train_ppo import load_policy_weights
+
+    path = _tiny_ppo_saved(tmp_path / "src")
+    src = PPO.load(path, device="cpu")
+
+    env = DummyVecEnv(
+        [lambda: OvercookedEgoEnv("cramped_room", partner_factory_from_spec({"type": "greedy"}), horizon=250)]
+    )
+    dst = PPO("MlpPolicy", env, n_steps=64, batch_size=64, device="cpu", policy_kwargs=dict(net_arch=[64, 64]))
+    load_policy_weights(dst, path, "cpu")
+
+    for (k, v_src), (_, v_dst) in zip(src.policy.state_dict().items(), dst.policy.state_dict().items()):
+        assert torch.equal(v_src.cpu(), v_dst.cpu()), f"peso no transferido: {k}"
+    env.close()

@@ -43,6 +43,19 @@ from training.callbacks import ScoreEvalCallback, ShapingAnnealCallback, linear_
 _ACTIVATIONS = {"tanh": nn.Tanh, "relu": nn.ReLU}
 
 
+def load_policy_weights(model: PPO, init_from: str, device: str) -> PPO:
+    """Finetune: transfiere SOLO los pesos de la política desde un checkpoint SB3.
+
+    Se construye un PPO nuevo con los hiperparámetros de la config (optimizador y
+    lr_schedule frescos, ent_coef del escenario) y aquí se copian los pesos aprendidos.
+    Requiere MISMA arquitectura (net_arch/activation) que el checkpoint de origen.
+    """
+    src = PPO.load(str(init_from), device=device)
+    model.policy.load_state_dict(src.policy.state_dict())
+    del src
+    return model
+
+
 # --------------------------------------------------------------------- env fns
 def _make_single_env(cfg: dict[str, Any], shaping_schedule: ShapingSchedule | None, rank: int):
     """Crea un OvercookedEgoEnv (Monitor-wrapped) para el índice `rank` del VecEnv."""
@@ -159,6 +172,11 @@ def train(cfg: dict[str, Any]) -> dict[str, Any]:
         verbose=1,
     )
 
+    init_from = cfg.get("init_from")
+    if init_from:
+        load_policy_weights(model, str(init_from), str(cfg["device"]))
+        print(f"[finetune] pesos de política cargados desde: {init_from}")
+
     eval_cb = ScoreEvalCallback(
         layout=cfg["layout"],
         partner_spec=cfg["eval"]["partner_spec"],
@@ -195,6 +213,7 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Entrenamiento PPO vs compañero (Etapa 3).")
     parser.add_argument("--config", required=True)
     parser.add_argument("--layout", default=None, help="override del layout (nombre o archivo .layout)")
+    parser.add_argument("--init-from", default=None, help="checkpoint SB3 para finetune (override de init_from)")
     parser.add_argument("--total-timesteps", type=int, default=None)
     parser.add_argument("--n-envs", type=int, default=None)
     parser.add_argument("--vec", default=None, choices=["subproc", "dummy"])
@@ -206,6 +225,7 @@ def main(argv: list[str] | None = None) -> None:
 
     overrides = {
         "layout": args.layout,
+        "init_from": args.init_from,
         "total_timesteps": args.total_timesteps,
         "n_envs": args.n_envs,
         "vec": args.vec,

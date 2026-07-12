@@ -1,0 +1,46 @@
+# esc2.yaml — Escenario 2: robustez vs greedy PEGAJOSO (PLAN.md Etapa 4.1)
+#
+# Finetune del checkpoint de Etapa 3 (1-2M pasos) contra un compañero greedy con
+# "inercia": repite su acción previa con prob U(0, 0.4) por episodio.
+# Requiere MISMA arquitectura que el checkpoint de origen (net_arch/activation).
+
+experiment_name: esc2_sticky
+layout: cramped_room
+init_from: esc1/esc1_greedy_cramped_room/best_model   # override con --init-from si hace falta
+partner_spec: {type: greedy, sticky_p: [0.0, 0.4]}
+randomize_index: true
+old_dynamics: true
+horizon: 250
+
+total_timesteps: 2000000      # 2e6 (finetune corto)
+n_envs: 8
+vec: subproc
+checkpoint_freq: 500000
+device: auto
+seed: 0
+
+ppo:
+  policy: MlpPolicy
+  net_arch: [256, 256]        # DEBE coincidir con el checkpoint de init_from
+  activation: tanh
+  learning_rate: 3.0e-4
+  lr_schedule: linear
+  ent_coef: 0.01              # ya entrega sopas -> ent bajo (sancionado por PLAN Etapa 3)
+  gamma: 0.99
+  gae_lambda: 0.95
+  n_steps: 1024
+  batch_size: 2048
+  n_epochs: 8
+  clip_range: 0.2
+  vf_coef: 0.5
+  max_grad_norm: 0.5
+
+shaping:
+  anneal_fraction: 0.6
+
+eval:
+  freq: 250000
+  seeds: [67, 68, 69]
+  partner_spec: {type: greedy, sticky_p: [0.0, 0.4]}   # GATE 4: sopas_mean >= 2
+
+output_dir: outputs/esc2

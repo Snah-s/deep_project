@@ -116,5 +116,52 @@ pasos corre en **Colab** (`colab/run_all.ipynb`) o en la **máquina con GPU** (1
   al harness, guarda `best_model.zip`/`last_model.zip`/`eval_history.json`/`config_used.yaml`.
 - Suite: **31 passed** (incluye regresión del segfault del checkpoint).
 
-**GATE 3: PENDIENTE** — requiere el entreno real (5e6) en GPU/Colab y luego
-`harness(best_model, greedy) ≥ harness(greedy, greedy)` con `soups_mean ≥ 1` en el layout objetivo.
+### GATE 3: ✅ PASA (entreno real en máquina con GPU, cramped_room, 5e6 pasos)
+Artefactos en `esc1/esc1_greedy_cramped_room/` (commiteados). Verificado con el harness
+oficial en esta máquina (CPU):
+
+| | soups_mean | score_mean | timeouts |
+|---|---|---|---|
+| **best_model vs greedy** | **4.0** | **40365.5** | 0 |
+| baseline greedy vs greedy | 0.0 | 0.0 | 0 |
+
+Los 6 intentos (3 seeds × 2 roles) entregan 4 sopas cada uno; role-swap simétrico
+(40371/40360). Curva de entreno: 1→3→4 sopas, convergió hacia ~3.5M pasos.
+
+---
+
+## Etapa 4 — Robustez Esc. 2-3-4 — CÓDIGO LISTO, entrenos pendientes (2026-07-12)
+
+Finetune/entreno para tres variantes robustas. Entrenos reales en GPU/Colab; aquí se
+preparó y validó el cableado en CPU.
+
+- **Finetune en `train_ppo.py`**: `init_from` (config) / `--init-from` (CLI) →
+  `load_policy_weights()` construye un PPO fresco con los hiperparámetros del escenario
+  (optimizador y lr_schedule nuevos) y transfiere SOLO los pesos de la política del
+  checkpoint. Requiere MISMA arquitectura (net_arch/activation). El annealing del shaping
+  cuenta desde 0 sobre el horizonte del finetune (PPO fresco, no continúa timesteps).
+- **`training/configs/esc2.yaml`** — finetune desde `esc1/.../best_model` vs
+  `greedy+sticky_p[0,0.4]`, 2e6 pasos, `ent_coef=0.01`. Eval GATE 4 vs greedy+sticky (sopas≥2).
+- **`training/configs/esc3.yaml`** — finetune (por defecto desde esc1 best, robusto; opción
+  de cadena esc2→esc3 vía `--init-from`) vs `greedy+sticky[0,0.4]+eps[0,0.4]`, 2e6, ent 0.01.
+- **`training/configs/esc4.yaml`** — DESDE CERO (opción warm-start desde esc3) vs mezcla
+  `random_motion(0.7)/stay(0.3)`, 5e6, `ent_coef=0.05` (explorar para cocinar solo).
+  Eval GATE 4 vs random_motion (sopas≥1).
+- **`colab/run_all.ipynb`** generalizado: variable `CONFIG` (esc1..esc4) + `INIT_FROM`,
+  evalúa vs compañero del escenario y vs greedy limpio (regresión).
+
+### Decisiones registradas
+- **`ent_coef=0.01` en esc2/esc3** (baja desde 0.05): explícitamente sancionado por el PLAN
+  (Etapa 3: "bajar a 0.01 si la política ya entrega sopas"). El agente de Etapa 3 ya entrega.
+- **esc3 finetunea desde esc1 por defecto** (no desde esc2): evita depender de la salida
+  efímera de esc2 en `outputs/` (gitignored). Cadena esc1→esc2→esc3 disponible vía `--init-from`.
+- **esc4 desde cero**: random_motion/stay son compañeros inútiles → el agente debe cocinar
+  solo; empezar desde cero evita arrastrar la dependencia del compañero greedy.
+
+### Validación en CPU
+- Smoke `esc2 --smoke` con `init_from` al best_model REAL de Etapa 3: carga pesos OK y el
+  agente ya entrega 2-3.5 sopas vs sticky desde el primer eval (hereda la competencia).
+- Suite: **32 passed** (nuevo test: `load_policy_weights` transfiere pesos exactos).
+
+**GATE 4: PENDIENTE** — requiere los entrenos reales y luego `sopas_mean ≥ 2` vs greedy+sticky
+(esc2/esc3) y `sopas_mean ≥ 1` vs random_motion (esc4), sin regresión catastrófica vs greedy limpio.

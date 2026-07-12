@@ -1,0 +1,47 @@
+# esc3.yaml — Escenario 3: robustez vs greedy PEGAJOSO + RUIDOSO (PLAN.md Etapa 4.2)
+#
+# Finetune con compañero greedy que además de "inercia" (sticky) mete acciones random
+# con prob U(0, 0.4). Por defecto parte del checkpoint de Etapa 3 (robusto, sin depender
+# de la salida efímera de esc2 en outputs/). Alternativa (cadena esc1->esc2->esc3): apuntar
+# --init-from a la salida de esc2.
+
+experiment_name: esc3_sticky_eps
+layout: cramped_room
+init_from: esc1/esc1_greedy_cramped_room/best_model   # o la salida de esc2 vía --init-from
+partner_spec: {type: greedy, sticky_p: [0.0, 0.4], eps: [0.0, 0.4]}
+randomize_index: true
+old_dynamics: true
+horizon: 250
+
+total_timesteps: 2000000      # 2e6
+n_envs: 8
+vec: subproc
+checkpoint_freq: 500000
+device: auto
+seed: 0
+
+ppo:
+  policy: MlpPolicy
+  net_arch: [256, 256]        # DEBE coincidir con el checkpoint de init_from
+  activation: tanh
+  learning_rate: 3.0e-4
+  lr_schedule: linear
+  ent_coef: 0.01              # ya entrega sopas -> ent bajo
+  gamma: 0.99
+  gae_lambda: 0.95
+  n_steps: 1024
+  batch_size: 2048
+  n_epochs: 8
+  clip_range: 0.2
+  vf_coef: 0.5
+  max_grad_norm: 0.5
+
+shaping:
+  anneal_fraction: 0.6
+
+eval:
+  freq: 250000
+  seeds: [67, 68, 69]
+  partner_spec: {type: greedy, sticky_p: [0.0, 0.4], eps: [0.0, 0.4]}
+
+output_dir: outputs/esc3

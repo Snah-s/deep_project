@@ -1,0 +1,55 @@
+# esc4.yaml — Escenario 4: cocinar SOLO vs compañero inútil (PLAN.md Etapa 4.3)
+#
+# Requisito DURO del Esc. 4: random_motion nunca hace interact, así que el agente debe
+# completar TODO el ciclo (cebollas -> cocinar -> plato -> servir) por sí mismo.
+# Se entrena DESDE CERO (init_from: null) con una mezcla de compañeros inútiles:
+# 70% random_motion (deambula, puede estorbar), 30% stay (no hace nada).
+#
+# Alternativa permitida por el PLAN: warm-start desde Esc. 3 (poner init_from a su
+# checkpoint). Por defecto desde cero para no arrastrar la dependencia del compañero.
+
+experiment_name: esc4_solo
+layout: cramped_room
+init_from: null               # desde cero; alternativa: checkpoint de esc3 vía --init-from
+partner_spec:
+  type: mixture
+  specs:
+    - {type: random_motion}
+    - {type: stay}
+  probs: [0.7, 0.3]
+randomize_index: true
+old_dynamics: true
+horizon: 250
+
+total_timesteps: 5000000      # 5e6 (aprender a cocinar solo es más difícil)
+n_envs: 8
+vec: subproc
+checkpoint_freq: 500000
+device: auto
+seed: 0
+
+ppo:
+  policy: MlpPolicy
+  net_arch: [256, 256]
+  activation: tanh
+  learning_rate: 3.0e-4
+  lr_schedule: linear
+  ent_coef: 0.05              # desde cero -> más exploración para descubrir el ciclo solo
+  gamma: 0.99
+  gae_lambda: 0.95
+  n_steps: 1024
+  batch_size: 2048
+  n_epochs: 8
+  clip_range: 0.2
+  vf_coef: 0.5
+  max_grad_norm: 0.5
+
+shaping:
+  anneal_fraction: 0.6
+
+eval:
+  freq: 250000
+  seeds: [67, 68, 69]
+  partner_spec: {type: random_motion}   # GATE 4: sopas_mean >= 1 cocinando solo
+
+output_dir: outputs/esc4
