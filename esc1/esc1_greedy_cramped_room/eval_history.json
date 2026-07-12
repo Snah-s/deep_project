@@ -1,0 +1,122 @@
+[
+  {
+    "timesteps": 250000,
+    "score_mean": 12304.5,
+    "soups_mean": 1.0,
+    "timeouts_total": 0
+  },
+  {
+    "timesteps": 500000,
+    "score_mean": 30895.5,
+    "soups_mean": 3.0,
+    "timeouts_total": 0
+  },
+  {
+    "timesteps": 750000,
+    "score_mean": 12315.5,
+    "soups_mean": 1.0,
+    "timeouts_total": 0
+  },
+  {
+    "timesteps": 1000000,
+    "score_mean": 30895.5,
+    "soups_mean": 3.0,
+    "timeouts_total": 0
+  },
+  {
+    "timesteps": 1250000,
+    "score_mean": 30895.5,
+    "soups_mean": 3.0,
+    "timeouts_total": 0
+  },
+  {
+    "timesteps": 1500000,
+    "score_mean": 12315.5,
+    "soups_mean": 1.0,
+    "timeouts_total": 0
+  },
+  {
+    "timesteps": 1750000,
+    "score_mean": 30895.5,
+    "soups_mean": 3.0,
+    "timeouts_total": 0
+  },
+  {
+    "timesteps": 2000000,
+    "score_mean": 30895.5,
+    "soups_mean": 3.0,
+    "timeouts_total": 0
+  },
+  {
+    "timesteps": 2250000,
+    "score_mean": 30895.5,
+    "soups_mean": 3.0,
+    "timeouts_total": 0
+  },
+  {
+    "timesteps": 2500000,
+    "score_mean": 30895.5,
+    "soups_mean": 3.0,
+    "timeouts_total": 0
+  },
+  {
+    "timesteps": 2750000,
+    "score_mean": 40305.5,
+    "soups_mean": 4.0,
+    "timeouts_total": 0
+  },
+  {
+    "timesteps": 3000000,
+    "score_mean": 40335.5,
+    "soups_mean": 4.0,
+    "timeouts_total": 0
+  },
+  {
+    "timesteps": 3250000,
+    "score_mean": 40335.5,
+    "soups_mean": 4.0,
+    "timeouts_total": 0
+  },
+  {
+    "timesteps": 3500000,
+    "score_mean": 40365.5,
+    "soups_mean": 4.0,
+    "timeouts_total": 0
+  },
+  {
+    "timesteps": 3750000,
+    "score_mean": 40335.5,
+    "soups_mean": 4.0,
+    "timeouts_total": 0
+  },
+  {
+    "timesteps": 4000000,
+    "score_mean": 40365.5,
+    "soups_mean": 4.0,
+    "timeouts_total": 0
+  },
+  {
+    "timesteps": 4250000,
+    "score_mean": 40365.5,
+    "soups_mean": 4.0,
+    "timeouts_total": 0
+  },
+  {
+    "timesteps": 4500000,
+    "score_mean": 40365.5,
+    "soups_mean": 4.0,
+    "timeouts_total": 0
+  },
+  {
+    "timesteps": 4750000,
+    "score_mean": 40365.5,
+    "soups_mean": 4.0,
+    "timeouts_total": 0
+  },
+  {
+    "timesteps": 5000000,
+    "score_mean": 40365.5,
+    "soups_mean": 4.0,
+    "timeouts_total": 0
+  }
+]
