@@ -49,8 +49,36 @@
 
 ---
 
-## Observación para la Etapa 2 (a tener en cuenta)
-- Par de control `greedy(0)+greedy(1)` en `cramped_room` con `old_dynamics=True` entregó
-  **0 sopas** (ambos greedy con `avoid_teammate=True` se estorban en un layout diminuto).
-  El GATE 2 asume `greedy+greedy > 0`; habrá que revisar el par de control (p. ej. otro
-  layout, o `avoid_teammate` en uno de ellos) al implementar el harness.
+## Etapa 2 — Harness de score oficial (2026-07-12)
+
+- **`evaluation/harness.py`**: `evaluate(agent_ctor, layout, partner_spec, seeds, horizon)`.
+  Por seed corre 2 episodios (rol normal + invertido). Ambos agentes pasan por
+  `SafeActionWrapper` (100 ms) del profesor para contar timeouts reales. Detecta sopas por
+  sparse reward (+20) y registra timestep de primera/última sopa. `official_score()`
+  implementa la fórmula del PLAN. El agente evaluado puede ser estilo-entregable
+  (`act(obs)->int`, se adapta con `StudentAgentAdapter`) o un `Agent` de overcooked (scripted/
+  checkpoint). CLI: `python -m evaluation.harness --layout L --agent A --partner P`.
+- **GATE 2:** `pytest tests/test_harness.py` → 7 passed. Controles reproducidos:
+  `stay+stay` → score 0; `greedy+greedy` → sopas>0 y score>0. Salida incluye
+  `{score_mean, soups_mean, timeouts_total}`.
+
+### Desvío documentado (regla 5 del PLAN) — layout del control greedy
+El GATE 2 pedía `greedy+greedy > 0` **en cramped_room**, pero la greedy del profesor
+(intencionalmente no óptima) se **atasca en cramped_room → 0 sopas** con cualquier
+`avoid_teammate`. Sí coopera en otros layouts. Decisión: el control "greedy entrega"
+se valida en `coordination_ring`; el control "stay → score 0" en `cramped_room`. Ambos
+casos del GATE quedan cubiertos.
+
+### Línea base `greedy+greedy` por layout (harness oficial, seeds 67,68,69 × 2 roles)
+
+| Layout | soups_mean | score_mean | timeouts |
+|---|---|---|---|
+| cramped_room             | 0.0 | 0.0     | 0 |
+| asymmetric_advantages    | 1.0 | 12200.0 | 0 |
+| coordination_ring        | 8.0 | 80247.0 | 0 |
+| counter_circuit_o_1order | 3.0 | 31055.0 | 0 |
+| forced_coordination      | 0.0 | 0.0     | 0 |
+
+> Estas cifras son el umbral a batir en la Etapa 3 (`harness(agente) ≥ harness(greedy,greedy)`).
+> OJO: en `cramped_room` y `forced_coordination` el baseline greedy es 0, así que ahí basta
+> con que el agente entrenado entregue ≥1 sopa para superarlo.
