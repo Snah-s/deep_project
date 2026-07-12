@@ -24,7 +24,32 @@
   `old_dynamics` como atributo consultable; se valida de forma conductual (la olla arranca
   a cocinar sola y el greedy entrega sopa).
 
-### Observación para la Etapa 2 (a tener en cuenta)
+---
+
+## Etapa 1 — Entorno de entrenamiento ego/alt (2026-07-12)
+
+- **`envs/ego_env.py` — `OvercookedEgoEnv(gymnasium.Env)`**: un agente (ego) con el
+  compañero (alt) resuelto dentro de `step()`. Obs `Box(96,)` featurized del ego,
+  acción `Discrete(6)`. `randomize_index=True` sortea el índice del ego por episodio
+  (cubre el role-swap). Reward = `sparse_ego + coef(step)·shaped_ego`. Termina por
+  horizonte → se reporta como `truncated`, no `terminated`.
+- **`envs/partners.py` — `make_partner(spec)`**: greedy, greedy+sticky, greedy+eps,
+  ambos, random_motion, stay, checkpoint (SB3 congelado, Etapa 5), mixture. Rangos
+  `[lo,hi]` en sticky_p/eps se muestrean por episodio. `StickyActionWrapper` reimplementado
+  (el zip no lo trae); `EpsilonActionWrapper` reutilizado del zip.
+- **`envs/reward_shaping.py` — `ShapingSchedule`**: coeficiente lineal 1.0→0.0 hasta
+  `anneal_end_step` (helper `from_total_steps(total, 0.6)`). NO reimplementa la detección
+  de eventos: el env del profesor ya expone el shaping +3/+3/+5 en `info["shaped_r_by_agent"]`
+  (sus `reward_shaping_params` coinciden exactamente con la receta del PLAN).
+- **Detalle técnico:** `Agent.reset()` de overcooked limpia `agent_index` y `mdp`, así que
+  el orden correcto al preparar un compañero es `reset()` → `set_mdp()` → `set_agent_index()`.
+- **GATE 1:** `pytest tests/test_ego_env.py` → 16 passed (3 episodios greedy sin excepción,
+  `gymnasium.check_env` OK, ambos índices del ego en 20 resets, specs de compañeros, schedule).
+  Suite completa: 22 passed. Todo en CPU (esta máquina no tiene GPU; ver nota de entorno).
+
+---
+
+## Observación para la Etapa 2 (a tener en cuenta)
 - Par de control `greedy(0)+greedy(1)` en `cramped_room` con `old_dynamics=True` entregó
   **0 sopas** (ambos greedy con `avoid_teammate=True` se estorban en un layout diminuto).
   El GATE 2 asume `greedy+greedy > 0`; habrá que revisar el par de control (p. ej. otro
