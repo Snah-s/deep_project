@@ -1,0 +1,22 @@
+{
+  "obs_shape": [
+    26,
+    16,
+    11
+  ],
+  "P0": 16,
+  "P1": 11,
+  "C": 26,
+  "horizon": 400,
+  "channels": 26,
+  "train_pool": [
+    "cramped_room",
+    "asymmetric_advantages",
+    "coordination_ring"
+  ],
+  "heldout": [
+    "counter_circuit",
+    "forced_coordination"
+  ],
+  "watchdog_steps": 10
+}

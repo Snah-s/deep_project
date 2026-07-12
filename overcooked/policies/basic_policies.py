@@ -8,7 +8,7 @@ from __future__ import annotations
 
 
 from collections import deque
-from typing import Iterable
+from typing import Any, Iterable
 
 import numpy as np
 
@@ -68,6 +68,10 @@ class GreedyFullTaskPolicy(Agent):
     old_dynamics=True layouts with three-onion recipes.
     """
 
+    # Number of consecutive steps without getting closer to the target before we
+    # assume we are deadlocked against the teammate and take an unblocking move.
+    STUCK_LIMIT = 3
+
     def __init__(
         self,
         ingredient: str = "onion",
@@ -80,22 +84,35 @@ class GreedyFullTaskPolicy(Agent):
         self.ingredient = ingredient
         self.avoid_teammate = bool(avoid_teammate)
         self.rng = np.random.default_rng(seed)
+        self._reset_progress()
+
+    def reset(self):
+        super().reset()
+        self._reset_progress()
+
+    def _reset_progress(self):
+        # Progress tracking used to detect and break deadlocks/oscillations where
+        # two greedy agents keep targeting the same tile and blocking each other.
+        self._tracked_target: tuple[int, int] | None = None
+        self._best_dist: int | None = None
+        self._stuck_steps: int = 0
 
     def action(self, state):
-        mdp = self.mdp
         player = state.players[self.agent_index]
         held = player.held_object
 
         try:
             target = self._choose_target(state)
             if target is None:
+                self._reset_progress()
                 return Action.STAY, {"policy_name": "greedy_full_task", "target": None}
 
-            action = self._move_or_interact_towards(state, target)
+            action, unstuck = self._move_or_interact_towards(state, target)
             return action, {
                 "policy_name": "greedy_full_task",
                 "held_object": None if held is None else held.name,
                 "target": target,
+                "unstuck": unstuck,
             }
         except Exception as exc:
             # This is a baseline policy. It should never crash the runner.
@@ -132,7 +149,10 @@ class GreedyFullTaskPolicy(Agent):
                 return None
 
             if held.name in {"onion", "tomato"}:
-                return self._nearest(player.position, self._pots_that_can_accept_ingredients(state, pot_states))
+                return self._nearest(
+                    player.position,
+                    self._pots_that_can_accept_ingredients(state, pot_states),
+                )
 
             return None
 
@@ -149,7 +169,7 @@ class GreedyFullTaskPolicy(Agent):
         # If someone dropped a useful ingredient on a counter, prefer using it.
         pots_needing_items = self._pots_that_can_accept_ingredients(state, pot_states)
         if pots_needing_items:
-            counter_ingredients = self._counter_objects_by_name(state, self.ingredient)
+            counter_ingredients = self._counter_objects_by_name(state, self._effective_ingredient())
             if counter_ingredients:
                 return self._nearest(player.position, counter_ingredients)
             ingredient_disps = self._ingredient_dispenser_locations()
@@ -170,8 +190,38 @@ class GreedyFullTaskPolicy(Agent):
 
         return None
 
+    def _effective_ingredient(self) -> str:
+        """Ingredient to actually use, adapting to the layout's recipe and dispensers.
+
+        A single-ingredient greedy only completes soups made of one ingredient.
+        Some layouts (e.g. simple_tomato) require tomato even though an onion
+        dispenser is present, so we look at the required recipes first and fall
+        back to whatever ingredient is dispensable.
+        """
+        has = {
+            "onion": bool(self.mdp.get_onion_dispenser_locations()),
+            "tomato": bool(self.mdp.get_tomato_dispenser_locations()),
+        }
+
+        # Ingredients required by at least one order (empty set => anything goes).
+        needed: set[str] = set()
+        try:
+            for order in getattr(self.mdp, "start_all_orders", None) or []:
+                for ing in (order or {}).get("ingredients", []):
+                    needed.add(str(ing))
+        except Exception:
+            needed = set()
+
+        def usable(ing: str) -> bool:
+            return has.get(ing, False) and (not needed or ing in needed)
+
+        for candidate in (self.ingredient, "onion", "tomato"):
+            if usable(candidate):
+                return candidate
+        return self.ingredient
+
     def _ingredient_dispenser_locations(self) -> list[tuple[int, int]]:
-        if self.ingredient == "onion":
+        if self._effective_ingredient() == "onion":
             return list(self.mdp.get_onion_dispenser_locations())
         return list(self.mdp.get_tomato_dispenser_locations())
 
@@ -190,29 +240,84 @@ class GreedyFullTaskPolicy(Agent):
     # Navigation and interaction
     # ---------------------------------------------------------------------
 
-    def _move_or_interact_towards(self, state, target: tuple[int, int]):
+    def _move_or_interact_towards(self, state, target: tuple[int, int]) -> tuple[Any, bool]:
         """Return an Overcooked action that moves/faces/interacts with target.
 
         The target is normally a non-walkable feature tile: onion dispenser, dish
         dispenser, pot, serving location, or a counter with an object. To interact
         with it, the player must stand on an adjacent walkable tile and face it.
+
+        Returns (action, unstuck) where ``unstuck`` signals that a deadlock-breaking
+        random move was taken.
         """
         player = state.players[self.agent_index]
         pos = player.position
         orientation = player.orientation
 
         if self._is_adjacent(pos, target):
+            # We reached an interaction tile: this counts as full progress.
+            self._update_progress(target, 0)
             desired_direction = self._direction_from_to(pos, target)
             if orientation == desired_direction:
-                return Action.INTERACT
-            return desired_direction
+                return Action.INTERACT, False
+            return desired_direction, False
 
-        next_pos = self._next_step_towards_interaction_tile(state, target)
+        next_pos, dist = self._next_step_towards_interaction_tile(state, target)
+        self._update_progress(target, dist)
+
+        # If we have stopped making progress toward the target, we are almost
+        # certainly blocking (or being blocked by) the teammate. Take a random
+        # legal step to break the symmetry instead of staying forever.
+        if self._stuck_steps >= self.STUCK_LIMIT:
+            self._stuck_steps = 0
+            unblock = self._random_unblocking_move(state)
+            if unblock is not None:
+                return unblock, True
+
         if next_pos is None:
-            return Action.STAY
-        return Action.determine_action_for_change_in_pos(pos, next_pos)
+            return Action.STAY, False
+        return Action.determine_action_for_change_in_pos(pos, next_pos), False
 
-    def _next_step_towards_interaction_tile(self, state, target: tuple[int, int]) -> tuple[int, int] | None:
+    def _update_progress(self, target: tuple[int, int], dist: int):
+        """Track distance-to-target so we can detect deadlocks/oscillations."""
+        if target != self._tracked_target:
+            self._tracked_target = target
+            self._best_dist = dist
+            self._stuck_steps = 0
+            return
+        if self._best_dist is None or dist < self._best_dist:
+            self._best_dist = dist
+            self._stuck_steps = 0
+        else:
+            self._stuck_steps += 1
+
+    def _random_unblocking_move(self, state):
+        """Pick a random legal move onto a free neighbouring tile."""
+        player = state.players[self.agent_index]
+        pos = player.position
+        valid_positions = set(self.mdp.get_valid_player_positions())
+        occupied = {
+            other.position for idx, other in enumerate(state.players) if idx != self.agent_index
+        }
+        candidates = [
+            Action.move_in_direction(pos, d)
+            for d in Direction.ALL_DIRECTIONS
+            if Action.move_in_direction(pos, d) in valid_positions
+            and Action.move_in_direction(pos, d) not in occupied
+        ]
+        if not candidates:
+            return None
+        nxt = candidates[int(self.rng.integers(0, len(candidates)))]
+        return Action.determine_action_for_change_in_pos(pos, nxt)
+
+    def _next_step_towards_interaction_tile(
+        self, state, target: tuple[int, int]
+    ) -> tuple[tuple[int, int] | None, int]:
+        """Return (next_step, distance) toward an interaction tile of ``target``.
+
+        distance is the number of steps remaining. It is a large sentinel when no
+        path exists so the caller's deadlock detector still makes progress.
+        """
         player = state.players[self.agent_index]
         start = player.position
 
@@ -223,20 +328,22 @@ class GreedyFullTaskPolicy(Agent):
                 if idx != self.agent_index:
                     blocked.add(other_player.position)
 
-        goals = [
-            p
-            for p in self._adjacent_positions(target)
-            if p in valid_positions and p not in blocked
-        ]
+        all_goals = [p for p in self._adjacent_positions(target) if p in valid_positions]
+        goals = [p for p in all_goals if p not in blocked] or all_goals
         if not goals:
-            goals = [p for p in self._adjacent_positions(target) if p in valid_positions]
-        if not goals:
-            return None
+            return None, self._NO_PATH_DIST
 
+        # Prefer a path that avoids the teammate; if none exists (e.g. the teammate
+        # sits in the only corridor) fall back to a path that ignores them so we
+        # still head the right way while the deadlock breaker does its job.
         path = self._bfs_shortest_path(start, set(goals), valid_positions, blocked)
+        if path is None:
+            path = self._bfs_shortest_path(start, set(goals), valid_positions, set())
         if path is None or len(path) < 2:
-            return None
-        return path[1]
+            return None, self._NO_PATH_DIST
+        return path[1], len(path) - 1
+
+    _NO_PATH_DIST = 10_000
 
     def _bfs_shortest_path(
         self,
