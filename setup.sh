@@ -1,149 +1,178 @@
 #!/usr/bin/env bash
 # =============================================================================
-# setup.sh — Descarga todo lo necesario para empezar el proyecto (ver PLANEACION.md)
-#
-#   1. Papers de referencia            -> docs/*.pdf
-#   2. Repos externos (layouts, refs)  -> external/
-#   3. Entorno micromamba "overcooked" (environment.yml) + extras de RL
-#   4. Verificación final de imports y datos
+# setup.sh — Comprobación e instalación de dependencias EXTERNAS a Python
+#            para el proyecto Overcooked-AI (ver PLAN.md)
 #
 # Uso:
-#   ./setup.sh                 # todo
-#   SKIP_ENV=1 ./setup.sh      # solo papers + repos (sin tocar el entorno)
-#   TORCH_FLAVOR=cu121 ./setup.sh   # en la máquina con GPU NVIDIA (default: auto)
+#   ./setup.sh --check     Solo diagnostica: reporta qué falta, no instala nada
+#   ./setup.sh             Comprueba e instala lo que falte (micromamba + entorno)
+#   ./setup.sh --cpu       Igual, pero fuerza torch solo-CPU en el entorno
 #
-# Idempotente: lo ya descargado/instalado se omite.
+# Qué cubre (y qué no):
+#   ✔ Herramientas de sistema: git, curl, unzip, bzip2, tar
+#   ✔ micromamba (instalación en espacio de usuario, sin sudo)
+#   ✔ Creación del entorno desde environment.yml
+#   ✔ Detección de GPU NVIDIA (informativa; el proyecto funciona en CPU)
+#   ✔ Detección de Colab/Kaggle → redirige a scripts/setup_colab.sh (allí NO se usa micromamba)
+#   ✔ Librerías de sistema para el rendering con pygame (solo aviso; opcional)
+#   ✘ NO instala drivers NVIDIA/CUDA del sistema (torch de pip trae sus propias libs CUDA)
+#   ✘ NO usa sudo salvo para paquetes apt opcionales de rendering (pregunta antes)
+#
+# Códigos de salida: 0 = todo listo | 1 = falta algo (en --check) o falló instalación
 # =============================================================================
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOCS="$ROOT/docs"
-EXT="$ROOT/external"
-ENV_NAME="overcooked"
+# --------------------------- utilidades de salida ---------------------------
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
+ok()   { echo -e "${GREEN}[OK]${NC}   $1"; }
+warn() { echo -e "${YELLOW}[AVISO]${NC} $1"; }
+fail() { echo -e "${RED}[FALTA]${NC} $1"; MISSING=1; }
 
-log()  { printf '\033[1;34m[setup]\033[0m %s\n' "$*"; }
-warn() { printf '\033[1;33m[setup]\033[0m %s\n' "$*"; }
+MISSING=0
+CHECK_ONLY=0
+FORCE_CPU=0
+for arg in "$@"; do
+  case "$arg" in
+    --check) CHECK_ONLY=1 ;;
+    --cpu)   FORCE_CPU=1 ;;
+    *) echo "Argumento desconocido: $arg (usa --check y/o --cpu)"; exit 1 ;;
+  esac
+done
 
-# -----------------------------------------------------------------------------
-# 1. Papers -> docs/
-# -----------------------------------------------------------------------------
-log "1/4 Papers de referencia -> docs/"
-mkdir -p "$DOCS"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_NAME="overcooked-agent"
+ENV_YML="${REPO_ROOT}/environment.yml"
 
-download_pdf() { # nombre_destino url
-    local dest="$DOCS/$1" url="$2"
-    if [ -s "$dest" ] && file "$dest" | grep -q "PDF"; then
-        log "  ya existe: $1"
-        return 0
-    fi
-    log "  bajando:   $1"
-    if curl -fsSL -A "Mozilla/5.0" -o "$dest" "$url" && file "$dest" | grep -q "PDF"; then
-        return 0
-    fi
-    warn "  FALLO: $1 ($url) — bórralo y reintenta, o descárgalo a mano"
-    rm -f "$dest"
-}
+echo "======================================================================"
+echo " Overcooked-AI — setup de dependencias externas ($( [ $CHECK_ONLY -eq 1 ] && echo 'modo CHECK' || echo 'modo INSTALL'))"
+echo "======================================================================"
 
-download_pdf 2019_carroll_utility_of_learning_about_humans.pdf "https://arxiv.org/pdf/1910.05789"
-download_pdf 2021_knott_robustness_collaborative_agents.pdf    "https://arxiv.org/pdf/2101.05507"
-download_pdf 2021_strouse_fcp.pdf                              "https://arxiv.org/pdf/2110.08176"
-download_pdf 2022_zhao_mep.pdf                                 "https://arxiv.org/pdf/2112.11701"
-download_pdf 2023_li_cole.pdf                                  "https://arxiv.org/pdf/2302.04831"
-download_pdf 2023_yan_e3t.pdf "https://papers.nips.cc/paper_files/paper/2023/file/07a363fd2263091c2063998e0034999c-Paper-Conference.pdf"
-download_pdf 2024_wang_zsc_eval.pdf                            "https://arxiv.org/pdf/2310.05208"
-download_pdf 2025_ruhdorfer_ogc.pdf                            "https://arxiv.org/pdf/2406.17949"
+# --------------------------- 0. Detección de plataforma ---------------------
+OS="$(uname -s || echo desconocido)"
+ARCH="$(uname -m || echo desconocido)"
+IS_WSL=0; grep -qi microsoft /proc/version 2>/dev/null && IS_WSL=1
 
-# -----------------------------------------------------------------------------
-# 2. Repos externos -> external/   (shallow, sin LFS: el zoo de agentes es opcional)
-# -----------------------------------------------------------------------------
-log "2/4 Repos externos -> external/"
-mkdir -p "$EXT"
-
-clone_repo() { # carpeta url
-    local dir="$EXT/$1" url="$2"
-    if [ -d "$dir/.git" ]; then
-        log "  ya existe: external/$1"
-    else
-        log "  clonando:  $url"
-        GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 "$url" "$dir"
-    fi
-}
-
-clone_repo ZSC-Eval           https://github.com/sjtu-marl/ZSC-Eval.git
-clone_repo overcooked_env_gen https://github.com/icaros-usc/overcooked_env_gen.git
-
-# -----------------------------------------------------------------------------
-# 3. Entorno python (micromamba/conda) + extras de RL
-# -----------------------------------------------------------------------------
-if [ "${SKIP_ENV:-0}" = "1" ]; then
-    log "3/4 SKIP_ENV=1 -> se omite el entorno"
-else
-    log "3/4 Entorno '$ENV_NAME'"
-    MAMBA="$(command -v micromamba || command -v mamba || command -v conda || true)"
-    if [ -z "$MAMBA" ]; then
-        warn "  no hay micromamba/conda; instala micromamba o corre con SKIP_ENV=1 dentro de un venv 3.10"
-        exit 1
-    fi
-    if ! "$MAMBA" env list | grep -qE "(^|/| )$ENV_NAME( |$)"; then
-        log "  creando entorno desde environment.yml"
-        "$MAMBA" env create -y -f "$ROOT/environment.yml"
-    else
-        log "  ya existe el entorno"
-    fi
-
-    PYBIN="$("$MAMBA" run -n "$ENV_NAME" python -c 'import sys; print(sys.executable)')"
-    log "  python: $PYBIN"
-
-    # torch: cpu por defecto; en máquina NVIDIA usa TORCH_FLAVOR=cu121 (o auto-detección)
-    FLAVOR="${TORCH_FLAVOR:-auto}"
-    if [ "$FLAVOR" = "auto" ]; then
-        if command -v nvidia-smi >/dev/null 2>&1; then FLAVOR=cu121; else FLAVOR=cpu; fi
-    fi
-    if ! "$PYBIN" -c 'import torch' 2>/dev/null; then
-        log "  instalando torch ($FLAVOR)"
-        if [ "$FLAVOR" = "cpu" ]; then
-            "$PYBIN" -m pip install -q torch --index-url https://download.pytorch.org/whl/cpu
-        else
-            "$PYBIN" -m pip install -q torch --index-url "https://download.pytorch.org/whl/$FLAVOR"
-        fi
-    else
-        log "  torch ya instalado"
-    fi
-
-    for spec in "stable_baselines3:stable-baselines3>=2.3" "gymnasium:gymnasium>=0.29" "pandas:pandas"; do
-        mod="${spec%%:*}"; pkg="${spec#*:}"
-        if ! "$PYBIN" -c "import $mod" 2>/dev/null; then
-            log "  instalando $pkg"
-            "$PYBIN" -m pip install -q "$pkg" "numpy<2"
-        else
-            log "  $mod ya instalado"
-        fi
-    done
-
-    # guardia: overcooked_ai 1.1.0 requiere numpy<2 (np.Inf fue removido en numpy 2)
-    "$PYBIN" -m pip install -q "numpy<2" >/dev/null
+if [ -d /content ] && [ -n "${COLAB_RELEASE_TAG:-}" ] || python3 -c "import google.colab" 2>/dev/null; then
+  warn "Entorno Google Colab detectado."
+  warn "En Colab NO se usa micromamba: ejecuta scripts/setup_colab.sh y REINICIA el runtime."
+  exit 0
+fi
+if [ -d /kaggle ]; then
+  warn "Entorno Kaggle detectado: usa scripts/setup_colab.sh (misma vertiente que Colab)."
+  exit 0
 fi
 
-# -----------------------------------------------------------------------------
-# 4. Verificación
-# -----------------------------------------------------------------------------
-if [ "${SKIP_ENV:-0}" = "1" ]; then
-    log "4/4 verificación omitida (SKIP_ENV=1)"
-else
-    log "4/4 Verificación final"
-    "$PYBIN" - <<'PY'
-import numpy, os
-assert numpy.__version__.startswith("1."), f"numpy {numpy.__version__}: overcooked_ai necesita <2"
-import torch, gymnasium, stable_baselines3, pandas
-import overcooked_ai_py
-from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld
-mdp = OvercookedGridworld.from_layout_name("cramped_room")
-data = os.path.join(os.path.dirname(overcooked_ai_py.__file__), "data", "human_data")
-pickles = [f for f in os.listdir(data) if f.endswith(".pickle")]
-print("  numpy", numpy.__version__, "| torch", torch.__version__,
-      "| sb3", stable_baselines3.__version__, "| gymnasium", gymnasium.__version__)
-print("  overcooked OK | data humana:", ", ".join(sorted(pickles)))
-PY
+case "$OS" in
+  Linux)  ok "SO: Linux ($ARCH)$( [ $IS_WSL -eq 1 ] && echo ' [WSL]')" ;;
+  Darwin) ok "SO: macOS ($ARCH)" ;;
+  *)      fail "SO no soportado por este script: $OS. En Windows nativo usa WSL2 (el timeout del profesor usa SIGALRM, solo-Unix)."; exit 1 ;;
+esac
+[ $IS_WSL -eq 1 ] && warn "WSL: entrenar aquí está bien; el autotest de timeouts (Etapa 7) también funciona (WSL es Unix)."
+
+# --------------------------- 1. Herramientas de sistema ---------------------
+echo "--- [1/5] Herramientas de sistema ---"
+NEED_TOOLS=()
+for tool in git curl tar bzip2 unzip; do
+  if command -v "$tool" >/dev/null 2>&1; then
+    ok "$tool $(command -v "$tool")"
+  else
+    fail "$tool no encontrado"
+    NEED_TOOLS+=("$tool")
+  fi
+done
+
+if [ ${#NEED_TOOLS[@]} -gt 0 ] && [ $CHECK_ONLY -eq 0 ]; then
+  if [ "$OS" = "Linux" ] && command -v apt-get >/dev/null 2>&1; then
+    echo ">> Instalando con apt: ${NEED_TOOLS[*]} (requiere sudo)"
+    sudo apt-get update -qq && sudo apt-get install -y -qq "${NEED_TOOLS[@]}"
+  elif [ "$OS" = "Darwin" ] && command -v brew >/dev/null 2>&1; then
+    echo ">> Instalando con brew: ${NEED_TOOLS[*]}"
+    brew install "${NEED_TOOLS[@]}"
+  else
+    fail "Instala manualmente: ${NEED_TOOLS[*]} (no se detectó apt/brew)"
+    exit 1
+  fi
 fi
 
-log "Listo. Ver PLANEACION.md para el plan completo."
+# --------------------------- 2. GPU (informativo) ----------------------------
+echo "--- [2/5] GPU ---"
+if command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi >/dev/null 2>&1; then
+  GPU_NAME=$(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | head -1)
+  ok "GPU NVIDIA detectada: ${GPU_NAME}. torch de pip usará CUDA sin instalar nada más."
+else
+  warn "Sin GPU NVIDIA visible. El proyecto FUNCIONA en CPU (entrenamiento más lento, ~2-4x)."
+  warn "El entregable SIEMPRE infiere en CPU, así que esto no afecta la entrega."
+  [ $FORCE_CPU -eq 0 ] && warn "Sugerencia: relanza con --cpu para un torch más liviano (sin libs CUDA)."
+fi
+
+# --------------------------- 3. micromamba -----------------------------------
+echo "--- [3/5] micromamba ---"
+MAMBA_BIN=""
+if command -v micromamba >/dev/null 2>&1; then
+  MAMBA_BIN="$(command -v micromamba)"
+  ok "micromamba ya instalado: $MAMBA_BIN ($(micromamba --version 2>/dev/null))"
+elif [ -x "${HOME}/.local/bin/micromamba" ]; then
+  MAMBA_BIN="${HOME}/.local/bin/micromamba"
+  ok "micromamba encontrado en ~/.local/bin"
+else
+  if [ $CHECK_ONLY -eq 1 ]; then
+    fail "micromamba no instalado (el modo install lo instalará sin sudo en ~/.local/bin)"
+  else
+    echo ">> Instalando micromamba en espacio de usuario (sin sudo)..."
+    # Instalador oficial; coloca el binario en ~/.local/bin y NO toca el sistema
+    "${SHELL:-bash}" <(curl -Ls https://micro.mamba.pm/install.sh) < /dev/null
+    export PATH="${HOME}/.local/bin:${PATH}"
+    MAMBA_BIN="$(command -v micromamba || echo "${HOME}/.local/bin/micromamba")"
+    [ -x "$MAMBA_BIN" ] && ok "micromamba instalado: $MAMBA_BIN" || { fail "instalación de micromamba falló"; exit 1; }
+  fi
+fi
+
+# --------------------------- 4. Entorno del proyecto -------------------------
+echo "--- [4/5] Entorno '${ENV_NAME}' desde environment.yml ---"
+if [ ! -f "$ENV_YML" ]; then
+  fail "No existe ${ENV_YML}. Este script debe correr desde la raíz del repo (junto a environment.yml)."
+  exit 1
+fi
+ok "environment.yml presente"
+
+if [ -n "$MAMBA_BIN" ] && "$MAMBA_BIN" env list 2>/dev/null | grep -q "$ENV_NAME"; then
+  ok "El entorno '${ENV_NAME}' ya existe"
+elif [ $CHECK_ONLY -eq 1 ]; then
+  [ -n "$MAMBA_BIN" ] && fail "El entorno '${ENV_NAME}' no existe aún (el modo install lo creará)"
+else
+  echo ">> Creando entorno '${ENV_NAME}' (esto tarda unos minutos)..."
+  if [ $FORCE_CPU -eq 1 ]; then
+    # Variante solo-CPU: crea el env sin torch y lo instala del índice CPU después
+    "$MAMBA_BIN" create -f "$ENV_YML" -y
+    "$MAMBA_BIN" run -n "$ENV_NAME" pip install --force-reinstall torch --index-url https://download.pytorch.org/whl/cpu
+  else
+    "$MAMBA_BIN" create -f "$ENV_YML" -y
+  fi
+  ok "Entorno creado"
+fi
+
+# --------------------------- 5. Rendering opcional (pygame ventana) ----------
+echo "--- [5/5] Rendering opcional (solo para VER partidas con play.yaml) ---"
+# Los wheels de pygame traen SDL2 embebido; en Linux de escritorio suele bastar.
+# En servidores/WSL sin X11 el rendering 'window' no funcionará: usar rendering: none o save_gif.
+if [ "$OS" = "Linux" ]; then
+  if [ -n "${DISPLAY:-}" ] || [ -n "${WAYLAND_DISPLAY:-}" ]; then
+    ok "Sesión gráfica detectada; el rendering en ventana debería funcionar."
+  else
+    warn "Sin DISPLAY: entorno headless. Entrenar/evaluar funciona igual (rendering: none)."
+    warn "Para GIFs de debug usa save_gif: true en los configs de la plantilla."
+  fi
+fi
+
+# --------------------------- Veredicto --------------------------------------
+echo "======================================================================"
+if [ $MISSING -eq 1 ]; then
+  echo -e "${RED}Resultado: faltan dependencias (ver [FALTA] arriba).${NC}"
+  [ $CHECK_ONLY -eq 1 ] && echo "Corre ./setup.sh (sin --check) para instalarlas."
+  exit 1
+fi
+echo -e "${GREEN}Resultado: dependencias externas listas.${NC}"
+echo "Siguientes pasos:"
+echo "  micromamba activate ${ENV_NAME}"
+echo "  pytest tests/test_env_smoke.py     # GATE 0 del PLAN.md"
+exit 0

@@ -1,54 +1,35 @@
-# Réplica del entorno micromamba "overcooked".
+# environment.yml — Entorno reproducible con micromamba para el proyecto Overcooked-AI
 #
-# Crear el entorno (NO se ejecuta automáticamente):
-#     micromamba env create -f environment.yml
-#     micromamba activate overcooked
+# Crear:      micromamba create -f environment.yml -y
+# Activar:    micromamba activate overcooked-agent
+# Verificar:  python tests/test_env_smoke.py   (GATE 0 del PLAN.md)
 #
-# Notas:
-#  - Reproduce el entorno tal como está instalado (versiones fijadas).
-#  - Las librerías de sistema de bajo nivel (libgcc, ncurses, openssl, tk, ...)
-#    se resuelven solas como dependencias de python, por eso no se listan.
-name: overcooked
+# Notas de reproducibilidad:
+# - Python 3.10 fijado: coincide con la plantilla del profesor (bytecode cpython-310)
+#   y es compatible con todo el stack. NO subir a 3.13+ sin re-validar el GATE 0.
+# - numpy<2 es OBLIGATORIO: overcooked-ai (PyPI) usa np.Inf, eliminado en NumPy 2.0.
+# - torch se instala por pip para controlar la variante CPU/CUDA de forma explícita.
+#   Por defecto va la de PyPI (trae CUDA en Linux). Para forzar solo-CPU, reemplazar
+#   la línea de torch por:  --extra-index-url https://download.pytorch.org/whl/cpu
+# - Los pines usan compatible-release (~=) para que sea reproducible sin congelar
+#   parches de seguridad. Para un lockfile exacto: pip freeze > requirements.lock
+#   después del primer GATE 0 en verde, y commitearlo.
+
+name: overcooked-agent
 channels:
   - conda-forge
 dependencies:
-  - python=3.10.20
-  - pip=26.1.1
-  - setuptools=82.0.1
-  - wheel=0.47.0
-  - pybind11=3.0.3
-  - pybind11-global=3.0.3
+  - python=3.10
+  - pip
+  - numpy=1.26.*          # <2 obligatorio (np.Inf removido en NumPy 2.0)
+  - pyyaml
+  - tqdm
+  - matplotlib            # curvas de EXPERIMENTS.md y renders del harness
+  - pytest                # gates de las etapas
+  - pygame                # rendering de la plantilla del profesor (play/collect_demos)
   - pip:
-      - Cython==3.2.4
-      - ImageIO==2.37.3
-      - PyYAML==6.0.3
-      - Pygments==2.20.0
-      - asttokens==3.0.1
-      - cloudpickle==3.1.2
-      - comm==0.2.3
-      - decorator==5.3.1
-      - exceptiongroup==1.3.1
-      - executing==2.2.1
-      - gym==0.26.2
-      - gym-notices==0.1.0
-      - ipython==8.39.0
-      - ipywidgets==8.1.8
-      - jedi==0.20.0
-      - jupyterlab_widgets==3.0.16
-      - matplotlib-inline==0.2.2
-      - numpy==1.26.4
-      - overcooked_ai==1.1.0
-      - parso==0.8.7
-      - pexpect==4.9.0
-      - pillow==12.2.0
-      - prompt_toolkit==3.0.52
-      - ptyprocess==0.7.0
-      - pure_eval==0.2.3
-      - pygame==2.5.2
-      - scipy==1.15.3
-      - stack-data==0.6.3
-      - tqdm==4.67.3
-      - traitlets==5.15.0
-      - typing_extensions==4.15.0
-      - wcwidth==0.7.0
-      - widgetsnbextension==4.0.15
+      - overcooked-ai            # entorno oficial (PyPI); la plantilla lo importa
+      - stable-baselines3~=2.9   # PPO del camino principal
+      - gymnasium~=1.3
+      - torch~=2.13              # inferencia CPU del entregable + entrenamiento
+      - opencv-python-headless<4.13  # dependencia de overcooked-ai compatible con numpy<2
