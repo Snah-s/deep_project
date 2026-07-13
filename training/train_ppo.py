@@ -284,6 +284,10 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--device", default=None, choices=["auto", "cpu", "cuda"])
     parser.add_argument("--output-dir", default=None)
     parser.add_argument("--seed", type=int, default=None)
+    parser.add_argument("--nav-shaping-coef", type=float, default=None,
+                        help="activa el shaping de navegación (override de nav_shaping_coef)")
+    parser.add_argument("--experiment-name", default=None,
+                        help="override del nombre (para no pisar artefactos de otra corrida)")
     parser.add_argument("--smoke", action="store_true", help="prueba rápida en CPU (valida el pipeline)")
     args = parser.parse_args(argv)
 
@@ -296,6 +300,8 @@ def main(argv: list[str] | None = None) -> None:
         "device": args.device,
         "output_dir": args.output_dir,
         "seed": args.seed,
+        "nav_shaping_coef": args.nav_shaping_coef,
+        "experiment_name": args.experiment_name,
     }
     cfg = _load_config(args.config, overrides)
     if args.smoke:

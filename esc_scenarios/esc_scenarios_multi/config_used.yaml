@@ -1,0 +1,72 @@
+experiment_name: esc_scenarios
+layout:
+- asymmetric_advantages
+- coordination_ring
+- counter_circuit
+init_from: null
+partner_spec:
+  type: mixture
+  specs:
+  - type: greedy
+  - type: greedy
+    sticky_p:
+    - 0.0
+    - 0.4
+  - type: greedy
+    sticky_p:
+    - 0.0
+    - 0.4
+    eps:
+    - 0.0
+    - 0.3
+  probs:
+  - 0.34
+  - 0.33
+  - 0.33
+randomize_index: true
+old_dynamics: true
+horizon: 250
+total_timesteps: 8000000
+n_envs: 40
+vec: subproc
+checkpoint_freq: 500000
+device: cpu
+seed: 0
+ppo:
+  policy: MlpPolicy
+  net_arch:
+  - 256
+  - 256
+  activation: tanh
+  learning_rate: 0.0003
+  lr_schedule: linear
+  ent_coef: 0.05
+  gamma: 0.99
+  gae_lambda: 0.95
+  n_steps: 1024
+  batch_size: 2048
+  n_epochs: 8
+  clip_range: 0.2
+  vf_coef: 0.5
+  max_grad_norm: 0.5
+shaping:
+  anneal_fraction: 0.6
+eval:
+  freq: 250000
+  seeds:
+  - 67
+  - 68
+  - 69
+  partner_spec:
+    type: greedy
+  partner_by_layout:
+    asymmetric_advantages:
+      type: greedy
+    coordination_ring:
+      type: greedy
+      sticky_p: 0.25
+    counter_circuit:
+      type: greedy
+      sticky_p: 0.25
+      eps: 0.15
+output_dir: outputs/esc_scenarios
