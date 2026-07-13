@@ -191,6 +191,92 @@ En el smoke se observó `timeouts=1` en el PRIMER eval: el primer `predict()` de
 recién cargado puede tardar >100 ms (init perezoso). En el entregable, `StudentAgent.__init__`
 debe **calentar el modelo con un forward dummy** para evitar un timeout en el primer `act()`.
 
-**GATE 4: PENDIENTE** — requiere los entrenos reales y luego `sopas_mean ≥ 2` vs greedy+sticky
-(esc2/esc3) y `sopas_mean ≥ 1` vs random_motion (esc4, en cada layout del pool), sin regresión
-catastrófica vs greedy limpio.
+### GATE 4: ✅ PASA (escenarios) — entrenos reales en cramped_room (2026-07-12)
+Los tres corridos en cramped_room single (esc4 en single, no multi-layout todavía).
+Artefactos en `esc2/`, `esc3/`, `esc4/`. Evaluado con el harness oficial (seeds 67,68,69 ×2 roles):
+
+| Variante | vs compañero escenario | vs greedy limpio | GATE |
+|---|---|---|---|
+| esc2 (finetune vs sticky)     | 3.83 sopas (≥2) | 4.00 (sin regresión) | ✅ |
+| esc3 (finetune vs sticky+eps) | 3.83 sopas (≥2) | **1.50 (REGRESIÓN)** | ✅ escenario |
+| esc4 (solo, desde cero)       | 5.00 vs random_motion; 2.50 vs stay | **0.00 vs greedy** | ✅ escenario |
+
+Curvas: esc2 2.5→3.8 sopas; esc3 1.7→3.7; esc4 0→5.0 (aprendió el ciclo solo hacia ~500k).
+
+### Hallazgos que orientan Esc 5-6
+1. **esc3 regresó vs greedy limpio (4.0→1.5):** entrenar vs compañero ruidoso (eps) sacrifica
+   la sinergia con un greedy competente. La robustez de-partner tiene trade-off.
+2. **esc4 es solo-specialist puro:** 5.0 sopas solo, pero **0.0 vs greedy competente** (en
+   cramped_room dos cocineros activos se estorban → mismo deadlock que greedy+greedy).
+   Aprendió a cocinar solo, NO a cooperar.
+
+**Conclusión:** los especialistas NO se componen en un generalista. Ningún checkpoint cubre
+todos los compañeros; el finetuning de robustez sacrifica el caso limpio; el solo-specialist
+falla con un compañero competente. → Refuerza el pivote a **E3T-lite**: entrenar vs una MEZCLA
+de todos los tipos a la vez (greedy + sticky + eps + random + stay + copia-congelada del ego).
+Como la mezcla incluye greedy limpio, arregla la regresión de esc3 de paso.
+
+### esc4 GENERALISTA multi-layout (esc4_alt/esc4_solo_multi, n_envs=9, 5e6, desde cero)
+Pool [cramped_room, coordination_ring, counter_circuit]. Harness vs random_motion:
+
+| Layout | soups | GATE≥1 |
+|---|---|---|
+| cramped_room             | 4.83 | ✅ |
+| coordination_ring        | 3.83 | ✅ |
+| counter_circuit_o_1order | 0.00 | ❌ |
+
+**Aprendió 2 de 3.** `counter_circuit` se quedó en 0 los 5M pasos (el más difícil solo: circuito
+largo). Arrancar desde cero + 1/3 de los envs + 0 señal temprana → nunca bootstrapeó; el
+best_model (por score promedio) tolera counter=0 porque cramped+coord compensan.
+**Aprendizaje:** el multi-layout desde cero no cubre layouts difíciles por sí solo; necesita
+warm-start desde un agente competente y/o upweight del layout difícil (curriculum). Insumo
+directo para el diseño E3T (warm-start + curriculum importan).
+
+### Diagnóstico counter_circuit solo (warm-start esc1, 16 envs enfocados, 1M, CPU)
+`outputs/esc4diag/` (gitignored). Resultado matizado:
+- El `ep_rew_mean` subió a ~1.1 hacia 475k pasos, pero era **shaped reward** (subtareas:
+  cebollas a la olla), **NO entregas**: el harness dio **0 sopas en los 4 evals** (250k-1M).
+- Colapsó a 0 hacia 640k: el shaping se aneló a 0 al 60% de 1M (=600k); como el agente nunca
+  logró una entrega sparse, al apagarse el shaping su reward→0 y la política se congeló.
+
+**Conclusión:** counter_circuit solo NO es imposible (aprende subtareas) pero es MUY difícil:
+1M warm-starteado no completó ni una sopa. El ciclo largo (cargar por todo el circuito) da
+sparse demasiado raro para bootstrappear, y el anneal rápido mató la guía. Nota: greedy (BFS
+perfecto) hace 2 sopas ahí → **greedy-viable ≠ RL-aprendible** en horizonte largo.
+
+**Decisión práctica:** sacar `counter_circuit` del pool solo de esc4. El generalista solo =
+`[cramped_room, coordination_ring]` (ambos pasan GATE 4). counter_circuit se maneja como layout
+de COOPERACIÓN (funciona con compañero competente), no solo — salvo que se invierta una corrida
+GPU grande (3-5M) con anneal de shaping más lento y/o shaping por distancia (POT/SOUP_DISTANCE,
+hoy en 0) para guiar el acarreo largo.
+
+---
+
+## Referencia: caracterización de los 45 layouts (proxy greedy, old_dynamics, h=250)
+`coop` = sopas greedy+greedy (¿cooperación viable?); `solo` = sopas greedy+random_motion
+(¿un cocinero solo?). Proxy con greedy (BFS perfecto): el RL puede superar (coop) o quedarse
+corto (horizonte largo). Ordenado por categoría.
+
+- **COOP+SOLO (versátiles):** marshmallow_experiment 24/12 · inverse_marshmallow 18/12 ·
+  simple_o 12/7 · simple_o_t 12/7 · centre_pots 8/6 · coordination_ring 8/3 · five_by_five 6/4 ·
+  scenario2 6/4 · scenario3 4/4 · counter_circuit_o_1order 3/2 · centre_objects 1/5 · scenario2_s 1/5
+- **COOP-ONLY (solo=0, necesitan 2):** tutorial_0/2/3 18 · marshmallow_experiment_coordination 12 ·
+  asymmetric_advantages_tomato 3 · asymmetric_advantages 1 · unident 1
+- **SOLO-ONLY (greedy-pair se atasca):** mdp_test 12 · cramped_room_tomato 8 · pipeline 6 ·
+  schelling_s 6 · **cramped_room 5** · cramped_room_o_3orders 5 · bottleneck 4 · large_room 4 ·
+  scenario1_s 4 · schelling 4 · scenario4 3 · m_shaped_s 1
+- **HARD/0 (greedy no logra ninguno):** forced_coordination(+tomato) · counter_circuit ·
+  you_shall_not_pass · soup_coordination · small_corridor · corridor · cramped_corridor ·
+  long_cook_time · bonus_order_test · simple_tomato · tutorial_1
+- **SKIP:** cramped_room_single (1p) · multiplayer_schelling (4p)
+
+**Insight clave:** `cramped_room` es SOLO-only (greedy+greedy=0); nuestro agente RL sí coopera
+ahí (4 sopas) → el RL supera a greedy en coordinación. `counter_circuit` (plano) es HARD/0 =
+layout de cooperación, no solo. Layouts tomate necesitan recipe tomate (greedy=onion no aplica).
+
+### Pools propuestos para la fase E3T (a confirmar con el usuario)
+- **Cooperación (agente robusto vs mezcla):** coordination_ring, counter_circuit_o_1order,
+  five_by_five, scenario2/3, centre_pots, simple_o, marshmallow_experiment (+ cramped_room, que
+  el RL coopera). Incluir algún HARD/0 (forced_coordination, counter_circuit) como reto.
+- **Solo generalista (esc4):** cramped_room, coordination_ring (confirmados). Ampliable con
+  cramped_room_o_3orders, large_room, bottleneck, scenario1_s.

@@ -35,6 +35,33 @@ from policies.basic_policies import (
 )
 from src.policy_wrappers import EpsilonActionWrapper
 
+import os
+
+
+# Caché de modelos SB3 por ruta, invalidada por mtime. Clave para el self-play de E3T:
+# el snapshot del ego se refresca en disco periódicamente; los compañeros lo recargan
+# solo cuando cambia el mtime (no en cada episodio -> evita recargar 2MB constantemente).
+_MODEL_CACHE: dict[str, tuple[float, Any]] = {}
+
+
+def _load_sb3(path: str, device: str = "cpu"):
+    p = path if str(path).endswith(".zip") else str(path) + ".zip"
+    mtime = os.path.getmtime(p)
+    cached = _MODEL_CACHE.get(path)
+    if cached is None or cached[0] != mtime:
+        from stable_baselines3 import PPO
+
+        _MODEL_CACHE[path] = (mtime, PPO.load(path, device=device))
+    return _MODEL_CACHE[path][1]
+
+
+class _EpsilonWrapper(EpsilonActionWrapper):
+    """EpsilonActionWrapper que además reenvía bind_env al agente base (para checkpoints)."""
+
+    def bind_env(self, env):
+        if hasattr(self.base_agent, "bind_env"):
+            self.base_agent.bind_env(env)
+
 
 # ---------------------------------------------------------------------------
 # Wrapper "sticky" (el zip no lo trae): repite la acción previa con prob p.
@@ -67,6 +94,10 @@ class StickyActionWrapper(Agent):
     def set_mdp(self, mdp):
         super().set_mdp(mdp)
         self.base_agent.set_mdp(mdp)
+
+    def bind_env(self, env):
+        if hasattr(self.base_agent, "bind_env"):
+            self.base_agent.bind_env(env)
 
     def action(self, state):
         base_action, info = self.base_agent.action(state)
@@ -101,6 +132,7 @@ class MixtureAgent(Agent):
         self.rng = np.random.default_rng(seed)
         self._sub: Agent | None = None
         self._mdp = None
+        self._env = None
 
     def _sample_sub(self):
         idx = int(self.rng.choice(len(self.specs), p=self.probs))
@@ -111,7 +143,14 @@ class MixtureAgent(Agent):
             sub.set_mdp(self._mdp)
         if self.agent_index is not None:
             sub.set_agent_index(self.agent_index)
+        if self._env is not None and hasattr(sub, "bind_env"):
+            sub.bind_env(self._env)
         self._sub = sub
+
+    def bind_env(self, env):
+        self._env = env
+        if self._sub is not None and hasattr(self._sub, "bind_env"):
+            self._sub.bind_env(env)
 
     def reset(self):
         super().reset()
@@ -155,10 +194,8 @@ class CheckpointAgent(Agent):
         self._env = None
 
     def _lazy_load(self):
-        if self._model is None:
-            from stable_baselines3 import PPO
-
-            self._model = PPO.load(self.path, device="cpu")
+        # Caché por mtime: recarga el snapshot solo si cambió (self-play de E3T).
+        self._model = _load_sb3(self.path, "cpu")
 
     def bind_env(self, env):
         """Enlaza el OvercookedEnv y carga el modelo AQUÍ (fuera del timing de act).
@@ -173,7 +210,8 @@ class CheckpointAgent(Agent):
     def action(self, state):
         from src.constants import action_index_to_overcooked_action
 
-        self._lazy_load()
+        if self._model is None:
+            self._lazy_load()
         if self._env is None:
             raise RuntimeError("CheckpointAgent no está enlazado a un env (llama bind_env).")
         obs = np.asarray(self._env.featurize_state_mdp(state)[self.agent_index], dtype=np.float32)
@@ -195,6 +233,19 @@ def _sample_scalar(value: Any, rng: np.random.Generator) -> float:
     return float(value)
 
 
+def _apply_wrappers(base: Agent, spec: dict, rng: np.random.Generator) -> Agent:
+    """Aplica sticky/eps (escalar o rango) sobre un agente base (greedy o checkpoint).
+
+    El `eps` implementa la componente random de la mezcla de E3T: `π = ε·base + (1-ε)·random`
+    con `random_action_prob = eps`. Se usa `_EpsilonWrapper` para que reenvíe bind_env.
+    """
+    if spec.get("sticky_p") is not None:
+        base = StickyActionWrapper(base, sticky_prob=_sample_scalar(spec["sticky_p"], rng), seed=spec.get("seed"))
+    if spec.get("eps") is not None:
+        base = _EpsilonWrapper(base, random_action_prob=_sample_scalar(spec["eps"], rng), seed=spec.get("seed"))
+    return base
+
+
 def make_partner(spec: dict, rng: np.random.Generator | None = None) -> Agent:
     """Construye un compañero (Agent) a partir de un spec declarativo.
 
@@ -212,13 +263,7 @@ def make_partner(spec: dict, rng: np.random.Generator | None = None) -> Agent:
             avoid_teammate=bool(spec.get("avoid_teammate", True)),
             seed=spec.get("seed"),
         )
-        if "sticky_p" in spec and spec["sticky_p"] is not None:
-            sticky_p = _sample_scalar(spec["sticky_p"], rng)
-            base = StickyActionWrapper(base, sticky_prob=sticky_p, seed=spec.get("seed"))
-        if "eps" in spec and spec["eps"] is not None:
-            eps = _sample_scalar(spec["eps"], rng)
-            base = EpsilonActionWrapper(base, random_action_prob=eps, seed=spec.get("seed"))
-        return base
+        return _apply_wrappers(base, spec, rng)
 
     if ptype == "random_motion":
         return RandomMotionPolicy(seed=spec.get("seed"))
@@ -229,12 +274,36 @@ def make_partner(spec: dict, rng: np.random.Generator | None = None) -> Agent:
     if ptype == "checkpoint":
         if "path" not in spec:
             raise ValueError("spec checkpoint requiere 'path'")
-        return CheckpointAgent(path=spec["path"], deterministic=bool(spec.get("deterministic", True)))
+        # deterministic False por defecto en self-play: queremos diversidad de conductas.
+        base = CheckpointAgent(path=spec["path"], deterministic=bool(spec.get("deterministic", True)))
+        return _apply_wrappers(base, spec, rng)
 
     if ptype == "mixture":
         return MixtureAgent(specs=spec["specs"], probs=spec.get("probs"), seed=spec.get("seed"))
 
     raise ValueError(f"Tipo de compañero desconocido: {ptype!r}")
+
+
+def resolve_self_spec(spec: Any, self_path: str) -> Any:
+    """Reemplaza recursivamente {'type':'self',...} por un checkpoint a `self_path`.
+
+    El componente 'self' es la copia congelada del ego (E3T). Se usa deterministic=False
+    (muestreo estocástico) para dar diversidad de conductas al compañero.
+    """
+    if not isinstance(spec, dict):
+        return spec
+    t = str(spec.get("type", "")).lower()
+    if t == "self":
+        out = dict(spec)
+        out["type"] = "checkpoint"
+        out["path"] = str(self_path)
+        out.setdefault("deterministic", False)
+        return out
+    if t == "mixture":
+        out = dict(spec)
+        out["specs"] = [resolve_self_spec(s, self_path) for s in spec["specs"]]
+        return out
+    return spec
 
 
 def partner_factory_from_spec(spec: dict) -> Callable[[], Agent]:

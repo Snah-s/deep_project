@@ -12,6 +12,7 @@ reward de entrenamiento (regla 8 del PLAN). También hay:
 from __future__ import annotations
 
 import json
+import os
 import random
 from pathlib import Path
 from typing import Any, Callable
@@ -20,6 +21,37 @@ import numpy as np
 from stable_baselines3.common.callbacks import BaseCallback
 
 from evaluation.harness import evaluate
+
+
+class SelfPlayCallback(BaseCallback):
+    """Refresca en disco un snapshot congelado del ego (mecanismo self-play de E3T).
+
+    Los compañeros de tipo `self` (checkpoint apuntando a `snapshot_path`) recargan este
+    snapshot cuando cambia su mtime (caché en partners._load_sb3). Guarda de forma atómica
+    (tmp + os.replace) para que un compañero nunca lea un zip a medio escribir.
+
+    El snapshot INICIAL debe crearse ANTES de learn() (train_ppo lo hace): los envs lo leen
+    en su primer reset. Este callback solo hace los refrescos periódicos.
+    """
+
+    def __init__(self, snapshot_path: str | Path, refresh_freq: int, verbose: int = 0):
+        super().__init__(verbose)
+        self.snapshot_path = str(snapshot_path)  # sin extensión .zip
+        self.refresh_freq = int(refresh_freq)
+        self._last_refresh = 0
+
+    def save_snapshot(self) -> None:
+        tmp = self.snapshot_path + ".tmp"
+        self.model.save(tmp)  # crea tmp.zip
+        os.replace(tmp + ".zip", self.snapshot_path + ".zip")
+
+    def _on_step(self) -> bool:
+        if self.num_timesteps - self._last_refresh >= self.refresh_freq:
+            self._last_refresh = self.num_timesteps
+            self.save_snapshot()
+            if self.verbose:
+                print(f"[selfplay @ {self.num_timesteps}] snapshot del ego refrescado")
+        return True
 
 
 def linear_schedule(initial_value: float) -> Callable[[float], float]:

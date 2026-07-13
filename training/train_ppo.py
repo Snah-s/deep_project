@@ -35,9 +35,14 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
 from envs.ego_env import OvercookedEgoEnv
-from envs.partners import partner_factory_from_spec
+from envs.partners import partner_factory_from_spec, resolve_self_spec
 from envs.reward_shaping import ShapingSchedule
-from training.callbacks import ScoreEvalCallback, ShapingAnnealCallback, linear_schedule
+from training.callbacks import (
+    ScoreEvalCallback,
+    SelfPlayCallback,
+    ShapingAnnealCallback,
+    linear_schedule,
+)
 
 
 _ACTIVATIONS = {"tanh": nn.Tanh, "relu": nn.ReLU}
@@ -63,8 +68,41 @@ def _layout_list(cfg: dict[str, Any]) -> list[str]:
     return list(lay) if isinstance(lay, list) else [lay]
 
 
+def _uses_self(spec: Any) -> bool:
+    """True si el partner_spec incluye una componente 'self' (self-play de E3T)."""
+    if not isinstance(spec, dict):
+        return False
+    t = str(spec.get("type", "")).lower()
+    if t == "self":
+        return True
+    if t == "mixture":
+        return any(_uses_self(s) for s in spec.get("specs", []))
+    return False
+
+
+def _prewarm(cfg: dict[str, Any], layout: str) -> None:
+    """Pre-calienta el motion planner (featurize) de un layout, con compañero trivial.
+
+    Usa partner 'stay' para NO depender del snapshot self-play (que aún no existe al
+    momento del prewarm). Con fork, los subprocesos heredan el planner (memoria+disco).
+    """
+    env = OvercookedEgoEnv(
+        layout_name_or_file=layout,
+        partner_factory=partner_factory_from_spec({"type": "stay"}),
+        horizon=int(cfg["horizon"]),
+        randomize_index=False,
+        old_dynamics=bool(cfg["old_dynamics"]),
+    )
+    env.reset()
+    env.close()
+
+
 def _make_single_env(cfg: dict[str, Any], shaping_schedule: ShapingSchedule | None, rank: int, layout: str):
-    """Crea un OvercookedEgoEnv (Monitor-wrapped) para el índice `rank`, fijado a `layout`."""
+    """Crea un OvercookedEgoEnv (Monitor-wrapped) para el índice `rank`, fijado a `layout`.
+
+    NO se resetea aquí: el reset (que crea el compañero) lo hace SB3 al empezar learn(),
+    después de que exista el snapshot inicial del self-play.
+    """
     env = OvercookedEgoEnv(
         layout_name_or_file=layout,
         partner_factory=partner_factory_from_spec(cfg["partner_spec"]),
@@ -73,9 +111,7 @@ def _make_single_env(cfg: dict[str, Any], shaping_schedule: ShapingSchedule | No
         randomize_index=bool(cfg["randomize_index"]),
         old_dynamics=bool(cfg["old_dynamics"]),
     )
-    env = Monitor(env)
-    env.reset(seed=int(cfg["seed"]) + rank)
-    return env
+    return Monitor(env)
 
 
 def _make_env_fn(cfg: dict[str, Any], shaping_schedule: ShapingSchedule | None, rank: int, layout: str):
@@ -138,10 +174,18 @@ def train(cfg: dict[str, Any]) -> dict[str, Any]:
         total_timesteps, anneal_fraction=float(cfg["shaping"]["anneal_fraction"])
     )
 
+    # Self-play (E3T): las componentes `self` del partner_spec apuntan a un snapshot
+    # congelado del ego en disco. Se resuelve a un checkpoint ANTES de construir los envs;
+    # el snapshot inicial se guarda tras crear el modelo (los envs lo leen en su 1er reset).
+    snapshot_path = None
+    if _uses_self(cfg["partner_spec"]):
+        snapshot_path = save_dir / "frozen_ego"
+        cfg["partner_spec"] = resolve_self_spec(cfg["partner_spec"], str(snapshot_path))
+
     # Pre-calentar el motion planner (featurize) de CADA layout una vez en el proceso
     # principal: con fork, los subprocesos heredan el planner (memoria y disco) y evitan carreras.
     for lay in pool:
-        _make_single_env(cfg, shaping_schedule, rank=0, layout=lay).close()
+        _prewarm(cfg, lay)
 
     vec_env = _build_vecenv(cfg, shaping_schedule)
 
@@ -198,6 +242,14 @@ def train(cfg: dict[str, Any]) -> dict[str, Any]:
     anneal_cb = ShapingAnnealCallback()
 
     callbacks = [anneal_cb, eval_cb]
+
+    # Self-play: snapshot inicial ANTES de learn() (los envs lo leen en su 1er reset) +
+    # callback que lo refresca periódicamente para que el ego juegue contra copias recientes.
+    if snapshot_path is not None:
+        model.save(str(snapshot_path))
+        refresh_freq = int(cfg.get("selfplay_refresh_freq", 100000))
+        callbacks.append(SelfPlayCallback(snapshot_path, refresh_freq, verbose=1))
+        print(f"[selfplay] snapshot inicial: {snapshot_path}.zip  (refresh cada {refresh_freq} pasos)")
     ckpt_freq = int(cfg.get("checkpoint_freq", 0) or 0)
     if ckpt_freq > 0:
         # save_freq de CheckpointCallback cuenta pasos POR env -> dividir por n_envs.

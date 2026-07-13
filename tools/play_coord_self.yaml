@@ -1,0 +1,50 @@
+# Self-play: NUESTRO agente (esc4) en AMBOS jugadores, coordination_ring.
+# agent_0 = azul, agent_1 = verde; los dos cargan el mismo checkpoint.
+seed: 67
+mode: debug
+environment:
+  layout_name: coordination_ring
+  layout_file: null
+  horizon: 250
+  old_dynamics: true
+policies:
+  agent_0:
+    type: python_class
+    path: tools/sb3_student_agent.py
+    class_name: StudentAgent
+    name: esc4_azul
+    config:
+      checkpoint: esc4_alt/esc4_solo_multi/best_model
+    random_action_prob: 0.0
+    max_action_time_ms: 100
+    invalid_action: stay
+    timeout_action: stay
+  agent_1:
+    type: python_class
+    path: tools/sb3_student_agent.py
+    class_name: StudentAgent
+    name: esc4_verde
+    config:
+      checkpoint: esc4_alt/esc4_solo_multi/best_model
+    random_action_prob: 0.0
+    max_action_time_ms: 100
+    invalid_action: stay
+    timeout_action: stay
+execution:
+  num_episodes: 1
+  episode_seeds: [67]
+  swap_agent_positions: false
+observation:
+  type: featurized
+  include_agent_index: true
+rendering:
+  mode: window
+  fps: 6
+  window_caption: "esc4 vs esc4 (self-play) - coordination_ring"
+  save_gif: true
+  gif_path: outputs/coord_self.gif
+logging:
+  output_dir: outputs/coord_self_run
+  save_step_log: false
+  save_episode_summary: true
+  save_trajectory_pickle: false

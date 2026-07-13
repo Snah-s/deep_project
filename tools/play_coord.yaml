@@ -1,0 +1,46 @@
+# Visualización: agente esc4 (generalista) en coordination_ring vs random_motion.
+# Rutas relativas a la RAÍZ del repo (correr tools/play.py desde ahí).
+seed: 67
+mode: debug
+environment:
+  layout_name: coordination_ring
+  layout_file: null
+  horizon: 250
+  old_dynamics: true
+policies:
+  agent_0:                                  # NUESTRO agente
+    type: python_class
+    path: tools/sb3_student_agent.py
+    class_name: StudentAgent
+    name: esc4_generalista
+    config:
+      checkpoint: esc4_alt/esc4_solo_multi/best_model
+    random_action_prob: 0.0
+    max_action_time_ms: 100
+    invalid_action: stay
+    timeout_action: stay
+  agent_1:                                  # compañero (cámbialo a greedy_full_task si quieres)
+    type: builtin
+    name: random_motion
+    random_action_prob: 0.0
+    max_action_time_ms: 100
+    invalid_action: stay
+    timeout_action: stay
+execution:
+  num_episodes: 1
+  episode_seeds: [67]
+  swap_agent_positions: false
+observation:
+  type: featurized
+  include_agent_index: true
+rendering:
+  mode: window
+  fps: 6
+  window_caption: "esc4 en coordination_ring (agente_0)"
+  save_gif: false
+  gif_path: outputs/coord_demo.gif
+logging:
+  output_dir: outputs/coord_demo_run
+  save_step_log: false
+  save_episode_summary: true
+  save_trajectory_pickle: false

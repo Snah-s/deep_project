@@ -1,0 +1,70 @@
+# esc_robust.yaml — E3T-lite: agente ROBUSTO de coordinación en UNA sola corrida.
+#
+# Fusiona las Etapas 5-6 del PLAN (población FCP + compañeros HSP sesgados, ~12 runs
+# caros) en UN solo self-play, siguiendo E3T (Yan 2023, NeurIPS):
+#   partner = mezcla { ε·ego + (1-ε)·random  (self-play),  greedy variado,  inútiles }
+# La componente `self` apunta a un snapshot congelado del ego que se refresca en disco
+# cada `selfplay_refresh_freq` pasos -> el ego coordina con copias RECIENTES de sí mismo,
+# no con una población pre-entrenada. El `eps` implementa la mezcla ε del paper.
+#
+# Warm-start recomendado desde el solo-generalista (ya sabe cocinar el ciclo completo):
+#   --init-from outputs/esc4/esc4_solo_multi/best_model
+# Por defecto desde cero para no arrastrar dependencias de ruta.
+
+experiment_name: esc_robust
+# Pool de coordinación (multi-layout, un layout por worker del VecEnv).
+layout:
+  - cramped_room
+  - coordination_ring
+  - counter_circuit_o_1order
+init_from: null               # alternativa: warm-start del solo vía --init-from
+
+partner_spec:
+  type: mixture
+  specs:
+    - {type: self, eps: [0.2, 0.5]}          # E3T: ε·ego + (1-ε)·random (self-play)
+    - {type: greedy}                          # coordinar con el scripted del profesor
+    - {type: greedy, sticky_p: [0.0, 0.4]}    # greedy titubeante
+    - {type: greedy, eps: [0.0, 0.4]}         # greedy ruidoso
+    - {type: random_motion}                   # compañero que estorba
+    - {type: stay}                            # compañero pasivo
+  probs: [0.4, 0.2, 0.15, 0.1, 0.1, 0.05]
+
+selfplay_refresh_freq: 100000  # refresca el snapshot congelado del ego cada 1e5 pasos
+
+randomize_index: true
+old_dynamics: true
+horizon: 250
+
+total_timesteps: 8000000      # 8e6: coordinar es más difícil que cocinar solo
+n_envs: 8
+vec: subproc
+checkpoint_freq: 500000
+device: auto
+seed: 0
+
+ppo:
+  policy: MlpPolicy
+  net_arch: [256, 256]
+  activation: tanh
+  learning_rate: 3.0e-4
+  lr_schedule: linear
+  ent_coef: 0.03
+  gamma: 0.99
+  gae_lambda: 0.95
+  n_steps: 1024
+  batch_size: 2048
+  n_epochs: 8
+  clip_range: 0.2
+  vf_coef: 0.5
+  max_grad_norm: 0.5
+
+shaping:
+  anneal_fraction: 0.6
+
+eval:
+  freq: 250000
+  seeds: [67, 68, 69]
+  partner_spec: {type: greedy}   # señal de coordinación limpia (vs scripted del profesor)
+
+output_dir: outputs/esc_robust
