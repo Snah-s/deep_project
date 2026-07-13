@@ -3,10 +3,11 @@
 # demo.sh — Muestra el ENTREGABLE (deliverable/) jugando con ventana pygame.
 #
 # Uso (desde cualquier carpeta):
-#   scripts/demo.sh [1|2|3|all]     ventana pygame en vivo (default: all)
+#   scripts/demo.sh [1|2|3|4|all]   ventana pygame en vivo (default: all)
 #   scripts/demo.sh 3 --gif          sin ventana: genera outputs/demo_esc3.gif (headless)
 #
 # Escenarios:  1=asymmetric_advantages  2=coordination_ring  3=counter_circuit
+#              4=scenario_4 (layout nuevo custom)
 # agent_0 (AZUL) = nuestro modelo; agent_1 (verde) = greedy_full_task.
 # Requiere el env 'overcooked' (micromamba) y un display para la ventana.
 # =============================================================================
@@ -20,9 +21,9 @@ GIF=""
 [ "${2:-}" = "--gif" ] && GIF="--gif"
 
 case "$WHICH" in
-  1|2|3) SCENS="$WHICH" ;;
-  all)   SCENS="1 2 3" ;;
-  *) echo "Uso: scripts/demo.sh [1|2|3|all] [--gif]"; exit 1 ;;
+  1|2|3|4) SCENS="$WHICH" ;;
+  all)     SCENS="1 2 3 4" ;;
+  *) echo "Uso: scripts/demo.sh [1|2|3|4|all] [--gif]"; exit 1 ;;
 esac
 
 RUN="micromamba run -n overcooked"

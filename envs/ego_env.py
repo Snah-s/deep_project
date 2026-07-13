@@ -27,7 +27,6 @@ from overcooked_ai_py.agents.agent import Agent
 from src.constants import action_index_to_overcooked_action
 from src.environment import build_env
 
-from envs.features import normalize_obs
 from envs.reward_shaping import ShapingSchedule
 
 # Recompensa sparse por sopa entregada (convención del env; el PLAN la fija en +20).
@@ -98,7 +97,7 @@ class OvercookedEgoEnv(gym.Env):
 
     def _featurize_ego(self) -> np.ndarray:
         obs_pair = self.env.featurize_state_mdp(self.env.state)
-        return normalize_obs(obs_pair[self.ego_index])
+        return obs_pair[self.ego_index].astype(np.float32)
 
     def _current_coef(self) -> float:
         if self.shaping_schedule is None:

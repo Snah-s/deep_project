@@ -1,0 +1,102 @@
+# esc_general.yaml — GENERALISTA: un modelo que juega layouts no vistos, no 3 memorizados.
+#
+# Diagnóstico: default.pt (entrenado solo en asym/coord/counter) COLAPSA en geometrías
+# nuevas — en scenario_4 se queda en una esquina y aporta 0 sopas (greedy carga solo).
+# Está sobreajustado. La cura es entrenar sobre un POOL amplio y variado de layouts para
+# que la política aprenda la *tarea* (cocinar/entregar) y no coordenadas concretas.
+#
+# Features CRUDAS (se revirtió la normalización de cook_time) -> se puede WARM-START desde
+# el modelo que ya funciona, que sabe el ciclo de cocina:
+#   --init-from esc_enhanced/best_model     (fine-tune amplio, no reaprender de cero)
+#
+# OJO n_envs: el trainer fija un layout por worker (pool[i % n_envs]). n_envs DEBE ser
+# >= nº de layouts del pool, idealmente múltiplo (aquí 20 layouts -> usar n_envs 40 = 2
+# workers/layout). Con n_envs < 20 los últimos layouts NO se entrenan. Se testea en esta
+# máquina (CPU); el entrenamiento corre fuera.
+
+experiment_name: esc_general
+
+# --- POOL DE ENTRENAMIENTO (20): 4 evaluados + scenario_4 custom + 15 geometrías variadas ---
+layout:
+  - asymmetric_advantages          # evaluado
+  - coordination_ring              # evaluado
+  - counter_circuit                # evaluado
+  - forced_coordination            # evaluado (coordinación obligada)
+  - overcooked/configs/layouts/scenario_4.layout   # el mapa nuevo, cocina abierta
+  - bottleneck
+  - centre_objects
+  - corridor
+  - cramped_room
+  - cramped_room_o_3orders
+  - five_by_five
+  - large_room
+  - m_shaped_s
+  - pipeline
+  - scenario1_s
+  - scenario2
+  - scenario3
+  - schelling_s
+  - small_corridor
+  - unident
+# HELD-OUT (NO entrenar — medir generalización en esta máquina, ver tools/test_general.py):
+#   centre_pots long_cook_time schelling scenario2_s scenario4 simple_o tutorial_0
+
+init_from: null                    # recomendado: --init-from esc_enhanced/best_model
+
+nav_shaping_coef: 0.5              # navegación densa: clave para geometrías desconocidas
+
+# Partner: receta greedy que YA funciona (esc_enhanced) + pizca de self para forced_coord.
+# Sin peso alto a `self` (eso hundió a esc_coop4). Greedy variado = robustez ZSC.
+partner_spec:
+  type: mixture
+  specs:
+    - {type: greedy}                                        # limpio
+    - {type: greedy, sticky_p: [0.3, 0.6]}                  # sticky agresivo
+    - {type: greedy, sticky_p: [0.0, 0.3]}                  # sticky moderado
+    - {type: greedy, sticky_p: [0.2, 0.5], eps: [0.0, 0.3]} # sticky + ruido
+    - {type: random_motion}                                 # compañero que estorba
+    - {type: self, eps: [0.3, 0.6]}                         # algo de self: señal para forced_coord
+  probs: [0.2, 0.22, 0.15, 0.18, 0.1, 0.15]
+
+selfplay_refresh_freq: 150000
+randomize_index: true
+old_dynamics: true
+horizon: 250
+
+total_timesteps: 25000000         # pool amplio -> más pasos; warm-start ayuda
+n_envs: 40                        # DEBE ser >= 20 (nº layouts). 40 = 2 workers/layout
+vec: subproc
+checkpoint_freq: 1000000
+device: auto
+seed: 0
+
+ppo:
+  policy: MlpPolicy
+  net_arch: [256, 256]
+  activation: tanh
+  learning_rate: 3.0e-4
+  lr_schedule: linear
+  ent_coef: 0.02
+  gamma: 0.99
+  gae_lambda: 0.95
+  n_steps: 1024
+  batch_size: 2048
+  n_epochs: 8
+  clip_range: 0.2
+  vf_coef: 0.5
+  max_grad_norm: 0.5
+
+shaping:
+  anneal_fraction: 0.6
+
+eval:
+  freq: 500000
+  seeds: [67, 68, 69]
+  partner_spec: {type: greedy}
+  partner_by_layout:
+    asymmetric_advantages: {type: greedy}
+    coordination_ring:     {type: greedy, sticky_p: 0.35}
+    counter_circuit:       {type: greedy, sticky_p: 0.25, eps: 0.15}
+    forced_coordination:   {type: greedy}
+
+output_dir: outputs/esc_general
