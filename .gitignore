@@ -11,5 +11,6 @@ docs/*.pdf
 # El entregable vive en deliverable/ (torch puro), no aquí.
 /esc*/
 
-# Diseño interno del proyecto: no exponer en el repo público.
+# Diseño interno / bitácora del proyecto: no exponer en el repo público.
 PLAN.md
+EXPERIMENTS.md
