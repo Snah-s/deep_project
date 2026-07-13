@@ -146,7 +146,7 @@ preparó y validó el cableado en CPU.
   de cadena esc2→esc3 vía `--init-from`) vs `greedy+sticky[0,0.4]+eps[0,0.4]`, 2e6, ent 0.01.
 - **`training/configs/esc4.yaml`** — DESDE CERO (opción warm-start desde esc3) vs mezcla
   `random_motion(0.7)/stay(0.3)`, 5e6, `ent_coef=0.05` (explorar para cocinar solo).
-  Eval GATE 4 vs random_motion (sopas≥1).
+  Eval GATE 4 vs random_motion (sopas≥1). **GENERALISTA MULTI-LAYOUT** (ver abajo).
 - **`colab/run_all.ipynb`** generalizado: variable `CONFIG` (esc1..esc4) + `INIT_FROM`,
   evalúa vs compañero del escenario y vs greedy limpio (regresión).
 
@@ -163,5 +163,34 @@ preparó y validó el cableado en CPU.
   agente ya entrega 2-3.5 sopas vs sticky desde el primer eval (hereda la competencia).
 - Suite: **32 passed** (nuevo test: `load_policy_weights` transfiere pesos exactos).
 
+### Esc.4 como GENERALISTA multi-layout (decisión del usuario)
+La obs `featurized` es `(96,)` en TODOS los layouts (solo `lossless_grid` cambia con H×W),
+así que un mismo `MlpPolicy` puede entrenar en varios layouts. Se decidió que **solo Esc.4**
+(el agente que cocina solo, el más "de propósito general") sea multi-layout → sirve como
+`default.pt` y hedge de layouts sorpresa. Esc.2/3 siguen per-layout (especialistas).
+
+**Pool de Esc.4 = solo layouts SOLO-VIABLES.** Medido con greedy cocinando solo vs el
+compañero real del escenario (`random_motion`, mediana de 3 seeds):
+
+| Layout | sopas greedy-solo | ¿en el pool? |
+|---|---|---|
+| cramped_room             | 5 | ✅ |
+| coordination_ring        | 4 | ✅ |
+| counter_circuit_o_1order | 2 | ✅ |
+| asymmetric_advantages    | 0 | ❌ (greedy no lo resuelve solo) |
+| forced_coordination      | 0 | ❌ (imposible solo POR DISEÑO: fuerza handoff) |
+
+**Implementación multi-layout:** `cfg['layout']` acepta lista; `train_ppo` reparte un layout
+por worker del VecEnv (round-robin), pre-calienta el motion planner de cada uno, y
+`ScoreEvalCallback` evalúa en CADA layout del pool eligiendo `best_model` por el score
+promedio (registra el desglose por layout en `eval_history.json`). `--layout <x>` sigue
+sirviendo para forzar un especialista de un solo layout. Smoke multi-layout OK (evalúa los 3).
+
+### Nota para la Etapa 7 (empaquetado)
+En el smoke se observó `timeouts=1` en el PRIMER eval: el primer `predict()` de un modelo SB3
+recién cargado puede tardar >100 ms (init perezoso). En el entregable, `StudentAgent.__init__`
+debe **calentar el modelo con un forward dummy** para evitar un timeout en el primer `act()`.
+
 **GATE 4: PENDIENTE** — requiere los entrenos reales y luego `sopas_mean ≥ 2` vs greedy+sticky
-(esc2/esc3) y `sopas_mean ≥ 1` vs random_motion (esc4), sin regresión catastrófica vs greedy limpio.
+(esc2/esc3) y `sopas_mean ≥ 1` vs random_motion (esc4, en cada layout del pool), sin regresión
+catastrófica vs greedy limpio.

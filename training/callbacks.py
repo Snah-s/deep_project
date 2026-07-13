@@ -76,7 +76,7 @@ class ScoreEvalCallback(BaseCallback):
 
     def __init__(
         self,
-        layout: str,
+        layouts: str | list[str],
         partner_spec: dict,
         seeds: list[int],
         eval_freq: int,
@@ -86,7 +86,8 @@ class ScoreEvalCallback(BaseCallback):
         verbose: int = 1,
     ):
         super().__init__(verbose)
-        self.layout = layout
+        # Acepta un layout o un pool (generalista multi-layout, p.ej. Esc.4).
+        self.layouts = [layouts] if isinstance(layouts, str) else list(layouts)
         self.partner_spec = partner_spec
         self.seeds = list(seeds)
         self.eval_freq = int(eval_freq)
@@ -100,57 +101,64 @@ class ScoreEvalCallback(BaseCallback):
     def _init_callback(self) -> None:
         self.save_dir.mkdir(parents=True, exist_ok=True)
 
-    def _run_eval(self) -> dict[str, Any]:
+    def _run_eval(self) -> dict[str, dict[str, Any]]:
         # El harness usa set_global_seed (reseeds np.random/random). Guardamos y
         # restauramos el estado global para NO perturbar el RNG del entrenamiento.
         py_state = random.getstate()
         np_state = np.random.get_state()
         try:
             student = SB3PolicyStudent(self.model, deterministic=self.deterministic)
-            result = evaluate(
-                agent_ctor=lambda: student,
-                layout=self.layout,
-                partner_spec=self.partner_spec,
-                seeds=self.seeds,
-                horizon=self.horizon,
-            )
+            per_layout = {
+                lay: evaluate(
+                    agent_ctor=lambda: student,
+                    layout=lay,
+                    partner_spec=self.partner_spec,
+                    seeds=self.seeds,
+                    horizon=self.horizon,
+                )
+                for lay in self.layouts
+            }
         finally:
             random.setstate(py_state)
             np.random.set_state(np_state)
-        return result
+        return per_layout
 
     def _on_step(self) -> bool:
         if self.num_timesteps - self._last_eval_step < self.eval_freq:
             return True
         self._last_eval_step = self.num_timesteps
 
-        result = self._run_eval()
-        score = result["score_mean"]
-        soups = result["soups_mean"]
-        timeouts = result["timeouts_total"]
+        per_layout = self._run_eval()
+        # Agregado sobre el pool: score/soups promedio, timeouts sumados.
+        score = float(np.mean([r["score_mean"] for r in per_layout.values()]))
+        soups = float(np.mean([r["soups_mean"] for r in per_layout.values()]))
+        timeouts = int(sum(r["timeouts_total"] for r in per_layout.values()))
 
         entry = {
             "timesteps": int(self.num_timesteps),
             "score_mean": score,
             "soups_mean": soups,
             "timeouts_total": timeouts,
+            "per_layout": {lay: {"score_mean": r["score_mean"], "soups_mean": r["soups_mean"]}
+                           for lay, r in per_layout.items()},
         }
         self.history.append(entry)
         (self.save_dir / "eval_history.json").write_text(json.dumps(self.history, indent=2))
 
-        # Logs a tensorboard/stdout de SB3.
         self.logger.record("harness/score_mean", score)
         self.logger.record("harness/soups_mean", soups)
         self.logger.record("harness/timeouts_total", timeouts)
+
+        tag = f"score={score:.1f} soups={soups:.2f} timeouts={timeouts}"
+        if len(self.layouts) > 1:
+            tag += " | " + " ".join(f"{lay[:8]}:{r['soups_mean']:.1f}" for lay, r in per_layout.items())
 
         if score > self.best_score:
             self.best_score = score
             self.model.save(str(self.save_dir / "best_model"))
             if self.verbose:
-                print(f"[eval @ {self.num_timesteps}] NUEVO MEJOR score={score:.1f} "
-                      f"soups={soups:.2f} timeouts={timeouts} -> best_model.zip")
+                print(f"[eval @ {self.num_timesteps}] NUEVO MEJOR {tag} -> best_model.zip")
         elif self.verbose:
-            print(f"[eval @ {self.num_timesteps}] score={score:.1f} soups={soups:.2f} "
-                  f"timeouts={timeouts} (best={self.best_score:.1f})")
+            print(f"[eval @ {self.num_timesteps}] {tag} (best={self.best_score:.1f})")
 
         return True

@@ -9,7 +9,14 @@
 # checkpoint). Por defecto desde cero para no arrastrar la dependencia del compañero.
 
 experiment_name: esc4_solo
-layout: cramped_room
+# GENERALISTA multi-layout: se reparte un layout por worker del VecEnv. Solo se incluyen
+# layouts SOLO-VIABLES (donde un agente puede cocinar solo). Excluidos: asymmetric_advantages
+# y forced_coordination (imposible solo por diseño). Ver EXPERIMENTS.md.
+# Para un especialista de un solo layout: --layout <nombre> (override a string).
+layout:
+  - cramped_room
+  - coordination_ring
+  - counter_circuit_o_1order
 init_from: null               # desde cero; alternativa: checkpoint de esc3 vía --init-from
 partner_spec:
   type: mixture

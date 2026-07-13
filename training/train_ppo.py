@@ -57,10 +57,16 @@ def load_policy_weights(model: PPO, init_from: str, device: str) -> PPO:
 
 
 # --------------------------------------------------------------------- env fns
-def _make_single_env(cfg: dict[str, Any], shaping_schedule: ShapingSchedule | None, rank: int):
-    """Crea un OvercookedEgoEnv (Monitor-wrapped) para el índice `rank` del VecEnv."""
+def _layout_list(cfg: dict[str, Any]) -> list[str]:
+    """Normaliza cfg['layout'] a lista (soporta pool multi-layout, p.ej. Esc.4)."""
+    lay = cfg["layout"]
+    return list(lay) if isinstance(lay, list) else [lay]
+
+
+def _make_single_env(cfg: dict[str, Any], shaping_schedule: ShapingSchedule | None, rank: int, layout: str):
+    """Crea un OvercookedEgoEnv (Monitor-wrapped) para el índice `rank`, fijado a `layout`."""
     env = OvercookedEgoEnv(
-        layout_name_or_file=cfg["layout"],
+        layout_name_or_file=layout,
         partner_factory=partner_factory_from_spec(cfg["partner_spec"]),
         horizon=int(cfg["horizon"]),
         shaping_schedule=shaping_schedule,
@@ -72,16 +78,18 @@ def _make_single_env(cfg: dict[str, Any], shaping_schedule: ShapingSchedule | No
     return env
 
 
-def _make_env_fn(cfg: dict[str, Any], shaping_schedule: ShapingSchedule | None, rank: int):
+def _make_env_fn(cfg: dict[str, Any], shaping_schedule: ShapingSchedule | None, rank: int, layout: str):
     def _f():
-        return _make_single_env(cfg, shaping_schedule, rank)
+        return _make_single_env(cfg, shaping_schedule, rank, layout)
 
     return _f
 
 
 def _build_vecenv(cfg: dict[str, Any], shaping_schedule: ShapingSchedule | None):
     n_envs = int(cfg["n_envs"])
-    env_fns = [_make_env_fn(cfg, shaping_schedule, i) for i in range(n_envs)]
+    pool = _layout_list(cfg)
+    # Reparte los layouts del pool round-robin entre los workers (multi-layout).
+    env_fns = [_make_env_fn(cfg, shaping_schedule, i, pool[i % len(pool)]) for i in range(n_envs)]
     if str(cfg["vec"]).lower() == "dummy" or n_envs == 1:
         return DummyVecEnv(env_fns)
     return SubprocVecEnv(env_fns)
@@ -118,7 +126,9 @@ def train(cfg: dict[str, Any]) -> dict[str, Any]:
     ppo_cfg = cfg["ppo"]
     total_timesteps = int(cfg["total_timesteps"])
 
-    run_name = f"{cfg['experiment_name']}_{Path(str(cfg['layout'])).stem}"
+    pool = _layout_list(cfg)
+    layout_tag = Path(str(pool[0])).stem if len(pool) == 1 else "multi"
+    run_name = f"{cfg['experiment_name']}_{layout_tag}"
     save_dir = Path(cfg["output_dir"]) / run_name
     save_dir.mkdir(parents=True, exist_ok=True)
     (save_dir / "config_used.yaml").write_text(yaml.safe_dump(cfg, sort_keys=False))
@@ -128,10 +138,10 @@ def train(cfg: dict[str, Any]) -> dict[str, Any]:
         total_timesteps, anneal_fraction=float(cfg["shaping"]["anneal_fraction"])
     )
 
-    # Pre-calentar el motion planner (featurize) una vez en el proceso principal:
-    # con fork, los subprocesos heredan el planner (en memoria y en disco) y evitan carreras.
-    warm = _make_single_env(cfg, shaping_schedule, rank=0)
-    warm.close()
+    # Pre-calentar el motion planner (featurize) de CADA layout una vez en el proceso
+    # principal: con fork, los subprocesos heredan el planner (memoria y disco) y evitan carreras.
+    for lay in pool:
+        _make_single_env(cfg, shaping_schedule, rank=0, layout=lay).close()
 
     vec_env = _build_vecenv(cfg, shaping_schedule)
 
@@ -178,7 +188,7 @@ def train(cfg: dict[str, Any]) -> dict[str, Any]:
         print(f"[finetune] pesos de política cargados desde: {init_from}")
 
     eval_cb = ScoreEvalCallback(
-        layout=cfg["layout"],
+        layouts=cfg["layout"],
         partner_spec=cfg["eval"]["partner_spec"],
         seeds=cfg["eval"]["seeds"],
         eval_freq=int(cfg["eval"]["freq"]),
