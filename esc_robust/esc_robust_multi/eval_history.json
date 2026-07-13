@@ -1,0 +1,642 @@
+[
+  {
+    "timesteps": 250000,
+    "score_mean": 3762.3333333333335,
+    "soups_mean": 0.3333333333333333,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      },
+      "coordination_ring": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 11287.0,
+        "soups_mean": 1.0
+      }
+    }
+  },
+  {
+    "timesteps": 500000,
+    "score_mean": 18942.333333333332,
+    "soups_mean": 1.8333333333333333,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      },
+      "coordination_ring": {
+        "score_mean": 45540.0,
+        "soups_mean": 4.5
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 11287.0,
+        "soups_mean": 1.0
+      }
+    }
+  },
+  {
+    "timesteps": 750000,
+    "score_mean": 9630.666666666666,
+    "soups_mean": 0.8333333333333334,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 12293.5,
+        "soups_mean": 1.0
+      },
+      "coordination_ring": {
+        "score_mean": 10977.0,
+        "soups_mean": 1.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 5621.5,
+        "soups_mean": 0.5
+      }
+    }
+  },
+  {
+    "timesteps": 1000000,
+    "score_mean": 27190.833333333332,
+    "soups_mean": 2.6666666666666665,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      },
+      "coordination_ring": {
+        "score_mean": 60585.5,
+        "soups_mean": 6.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 20987.0,
+        "soups_mean": 2.0
+      }
+    }
+  },
+  {
+    "timesteps": 1250000,
+    "score_mean": 29454.166666666668,
+    "soups_mean": 2.8333333333333335,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 17105.5,
+        "soups_mean": 1.5
+      },
+      "coordination_ring": {
+        "score_mean": 60691.5,
+        "soups_mean": 6.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 10565.5,
+        "soups_mean": 1.0
+      }
+    }
+  },
+  {
+    "timesteps": 1500000,
+    "score_mean": 3673.1666666666665,
+    "soups_mean": 0.3333333333333333,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      },
+      "coordination_ring": {
+        "score_mean": 11019.5,
+        "soups_mean": 1.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 1750000,
+    "score_mean": 7602.333333333333,
+    "soups_mean": 0.6666666666666666,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 6166.0,
+        "soups_mean": 0.5
+      },
+      "coordination_ring": {
+        "score_mean": 11019.5,
+        "soups_mean": 1.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 5621.5,
+        "soups_mean": 0.5
+      }
+    }
+  },
+  {
+    "timesteps": 2000000,
+    "score_mean": 5542.166666666667,
+    "soups_mean": 0.5,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 10961.0,
+        "soups_mean": 1.0
+      },
+      "coordination_ring": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 5665.5,
+        "soups_mean": 0.5
+      }
+    }
+  },
+  {
+    "timesteps": 2250000,
+    "score_mean": 26784.5,
+    "soups_mean": 2.6666666666666665,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      },
+      "coordination_ring": {
+        "score_mean": 80353.5,
+        "soups_mean": 8.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 2500000,
+    "score_mean": 26794.0,
+    "soups_mean": 2.6666666666666665,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      },
+      "coordination_ring": {
+        "score_mean": 80382.0,
+        "soups_mean": 8.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 2750000,
+    "score_mean": 38552.0,
+    "soups_mean": 3.8333333333333335,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 35181.5,
+        "soups_mean": 3.5
+      },
+      "coordination_ring": {
+        "score_mean": 80474.5,
+        "soups_mean": 8.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 3000000,
+    "score_mean": 50281.166666666664,
+    "soups_mean": 5.0,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 70348.0,
+        "soups_mean": 7.0
+      },
+      "coordination_ring": {
+        "score_mean": 80495.5,
+        "soups_mean": 8.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 3250000,
+    "score_mean": 38572.166666666664,
+    "soups_mean": 3.8333333333333335,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 35211.5,
+        "soups_mean": 3.5
+      },
+      "coordination_ring": {
+        "score_mean": 80505.0,
+        "soups_mean": 8.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 3500000,
+    "score_mean": 38561.0,
+    "soups_mean": 3.8333333333333335,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 35178.0,
+        "soups_mean": 3.5
+      },
+      "coordination_ring": {
+        "score_mean": 80505.0,
+        "soups_mean": 8.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 3750000,
+    "score_mean": 37373.333333333336,
+    "soups_mean": 3.6666666666666665,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 10967.0,
+        "soups_mean": 1.0
+      },
+      "coordination_ring": {
+        "score_mean": 80500.0,
+        "soups_mean": 8.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 20653.0,
+        "soups_mean": 2.0
+      }
+    }
+  },
+  {
+    "timesteps": 4000000,
+    "score_mean": 42311.5,
+    "soups_mean": 4.166666666666667,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 35206.0,
+        "soups_mean": 3.5
+      },
+      "coordination_ring": {
+        "score_mean": 80474.5,
+        "soups_mean": 8.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 11254.0,
+        "soups_mean": 1.0
+      }
+    }
+  },
+  {
+    "timesteps": 4250000,
+    "score_mean": 30263.333333333332,
+    "soups_mean": 3.0,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      },
+      "coordination_ring": {
+        "score_mean": 80474.5,
+        "soups_mean": 8.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 10315.5,
+        "soups_mean": 1.0
+      }
+    }
+  },
+  {
+    "timesteps": 4500000,
+    "score_mean": 40446.0,
+    "soups_mean": 4.0,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 35167.5,
+        "soups_mean": 3.5
+      },
+      "coordination_ring": {
+        "score_mean": 80505.0,
+        "soups_mean": 8.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 5665.5,
+        "soups_mean": 0.5
+      }
+    }
+  },
+  {
+    "timesteps": 4750000,
+    "score_mean": 43945.166666666664,
+    "soups_mean": 4.333333333333333,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 35162.0,
+        "soups_mean": 3.5
+      },
+      "coordination_ring": {
+        "score_mean": 80505.5,
+        "soups_mean": 8.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 16168.0,
+        "soups_mean": 1.5
+      }
+    }
+  },
+  {
+    "timesteps": 5000000,
+    "score_mean": 40429.5,
+    "soups_mean": 4.0,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 35172.5,
+        "soups_mean": 3.5
+      },
+      "coordination_ring": {
+        "score_mean": 80505.5,
+        "soups_mean": 8.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 5610.5,
+        "soups_mean": 0.5
+      }
+    }
+  },
+  {
+    "timesteps": 5250000,
+    "score_mean": 38557.666666666664,
+    "soups_mean": 3.8333333333333335,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 35167.5,
+        "soups_mean": 3.5
+      },
+      "coordination_ring": {
+        "score_mean": 80505.5,
+        "soups_mean": 8.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 5500000,
+    "score_mean": 26833.166666666668,
+    "soups_mean": 2.6666666666666665,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      },
+      "coordination_ring": {
+        "score_mean": 80499.5,
+        "soups_mean": 8.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 5750000,
+    "score_mean": 30341.5,
+    "soups_mean": 3.0,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      },
+      "coordination_ring": {
+        "score_mean": 80505.5,
+        "soups_mean": 8.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 10519.0,
+        "soups_mean": 1.0
+      }
+    }
+  },
+  {
+    "timesteps": 6000000,
+    "score_mean": 38572.166666666664,
+    "soups_mean": 3.8333333333333335,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 35211.5,
+        "soups_mean": 3.5
+      },
+      "coordination_ring": {
+        "score_mean": 80505.0,
+        "soups_mean": 8.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 6250000,
+    "score_mean": 42356.5,
+    "soups_mean": 4.166666666666667,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 35211.5,
+        "soups_mean": 3.5
+      },
+      "coordination_ring": {
+        "score_mean": 80505.0,
+        "soups_mean": 8.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 11353.0,
+        "soups_mean": 1.0
+      }
+    }
+  },
+  {
+    "timesteps": 6500000,
+    "score_mean": 40464.333333333336,
+    "soups_mean": 4.0,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 35206.0,
+        "soups_mean": 3.5
+      },
+      "coordination_ring": {
+        "score_mean": 80505.0,
+        "soups_mean": 8.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 5682.0,
+        "soups_mean": 0.5
+      }
+    }
+  },
+  {
+    "timesteps": 6750000,
+    "score_mean": 40337.833333333336,
+    "soups_mean": 4.0,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 35206.0,
+        "soups_mean": 3.5
+      },
+      "coordination_ring": {
+        "score_mean": 80510.5,
+        "soups_mean": 8.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 5297.0,
+        "soups_mean": 0.5
+      }
+    }
+  },
+  {
+    "timesteps": 7000000,
+    "score_mean": 38554.666666666664,
+    "soups_mean": 3.8333333333333335,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 35200.5,
+        "soups_mean": 3.5
+      },
+      "coordination_ring": {
+        "score_mean": 80463.5,
+        "soups_mean": 8.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 7250000,
+    "score_mean": 28895.833333333332,
+    "soups_mean": 2.8333333333333335,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 6182.5,
+        "soups_mean": 0.5
+      },
+      "coordination_ring": {
+        "score_mean": 80505.0,
+        "soups_mean": 8.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 7500000,
+    "score_mean": 40629.333333333336,
+    "soups_mean": 4.0,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 41383.0,
+        "soups_mean": 4.0
+      },
+      "coordination_ring": {
+        "score_mean": 80505.0,
+        "soups_mean": 8.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 7750000,
+    "score_mean": 42506.833333333336,
+    "soups_mean": 4.166666666666667,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 41377.5,
+        "soups_mean": 4.0
+      },
+      "coordination_ring": {
+        "score_mean": 80505.0,
+        "soups_mean": 8.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 5638.0,
+        "soups_mean": 0.5
+      }
+    }
+  },
+  {
+    "timesteps": 8000000,
+    "score_mean": 42516.0,
+    "soups_mean": 4.166666666666667,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 41377.5,
+        "soups_mean": 4.0
+      },
+      "coordination_ring": {
+        "score_mean": 80505.0,
+        "soups_mean": 8.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 5665.5,
+        "soups_mean": 0.5
+      }
+    }
+  }
+]
