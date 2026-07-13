@@ -41,8 +41,10 @@ class SelfPlayCallback(BaseCallback):
         self._last_refresh = 0
 
     def save_snapshot(self) -> None:
-        tmp = self.snapshot_path + ".tmp"
-        self.model.save(tmp)  # crea tmp.zip
+        # OJO: sufijo SIN punto. SB3 añade .zip solo si el path no tiene sufijo; un
+        # ".tmp" contaría como extensión y guardaría sin .zip -> os.replace fallaría.
+        tmp = self.snapshot_path + "_tmp"
+        self.model.save(tmp)  # crea <...>_tmp.zip
         os.replace(tmp + ".zip", self.snapshot_path + ".zip")
 
     def _on_step(self) -> bool:
