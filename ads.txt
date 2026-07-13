@@ -1,0 +1,10 @@
+Al terminar (cualquiera de las dos) → exportar y testear aquí
+
+# 1) exportar el mejor checkpoint al .pt del entregable
+micromamba run -n overcooked python scripts/export_weights.py \
+  --checkpoint outputs/esc_general/esc_general_multi/best_model \
+  --out deliverable/weights/default.pt
+
+# 2) test de generalización en ESTA máquina (mira que la columna `solo` suba en held-out)
+micromamba run -n overcooked python tools/test_general.py \
+  --weights deliverable/weights/default.pt
