@@ -1,0 +1,64 @@
+# esc_coord.yaml — ESPECIALISTA de coordination_ring ENDURECIDO vs sticky agresivo (Esc.2).
+#
+# Flanco débil detectado: el modelo único cae 8.0 -> 3.4 con sticky 0.4 y 1.7 con 0.6.
+# coordination_ring es un anillo estrecho: cuando el greedy se congela (sticky) TAPONA el
+# paso y nuestro agente no lo rodea. Este run entrena con partner ponderado hacia sticky
+# ALTO [0.3,0.6] + nav-shaping (para aprender a rodear a un compañero congelado).
+#
+# Warm-start recomendado desde el generalista nav (ya hace coordination 8.0 limpio):
+#   --init-from esc_scenarios_nav_multi/best_model
+# Es un fine-tune del flanco sticky, no reaprender coordination desde cero.
+
+experiment_name: esc_coord
+layout: coordination_ring
+init_from: null                # recomendado: --init-from esc_scenarios_nav_multi/best_model
+
+nav_shaping_coef: 0.5          # ayuda a rutear alrededor del compañero congelado
+
+# Partner ponderado hacia sticky agresivo, con cola de casos moderado/limpio para no
+# olvidar la coordinación fluida (que sigue siendo el caso más probable).
+partner_spec:
+  type: mixture
+  specs:
+    - {type: greedy, sticky_p: [0.3, 0.6]}                  # caso duro (el que endurecemos)
+    - {type: greedy, sticky_p: [0.0, 0.3]}                  # moderado
+    - {type: greedy}                                        # limpio
+    - {type: greedy, sticky_p: [0.2, 0.5], eps: [0.0, 0.2]} # algo de random para generalizar
+  probs: [0.45, 0.30, 0.15, 0.10]
+
+randomize_index: true
+old_dynamics: true
+horizon: 250
+
+total_timesteps: 6000000      # un solo layout + warm-start -> converge más rápido
+n_envs: 8                     # override en cluster: --n-envs 40
+vec: subproc
+checkpoint_freq: 500000
+device: auto
+seed: 0
+
+ppo:
+  policy: MlpPolicy
+  net_arch: [256, 256]
+  activation: tanh
+  learning_rate: 3.0e-4
+  lr_schedule: linear
+  ent_coef: 0.03              # con warm-start no hace falta tanta exploración
+  gamma: 0.99
+  gae_lambda: 0.95
+  n_steps: 1024
+  batch_size: 2048
+  n_epochs: 8
+  clip_range: 0.2
+  vf_coef: 0.5
+  max_grad_norm: 0.5
+
+shaping:
+  anneal_fraction: 0.6
+
+eval:
+  freq: 250000
+  seeds: [67, 68, 69]
+  partner_spec: {type: greedy, sticky_p: 0.35}   # selecciona best por robustez a sticky agresivo
+
+output_dir: outputs/esc_coord

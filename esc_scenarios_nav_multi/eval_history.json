@@ -1,0 +1,642 @@
+[
+  {
+    "timesteps": 250000,
+    "score_mean": 0.0,
+    "soups_mean": 0.0,
+    "timeouts_total": 1,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      },
+      "coordination_ring": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      },
+      "counter_circuit": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 500000,
+    "score_mean": 666.1666666666666,
+    "soups_mean": 0.05555555555555555,
+    "timeouts_total": 0,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      },
+      "coordination_ring": {
+        "score_mean": 1998.5,
+        "soups_mean": 0.16666666666666666
+      },
+      "counter_circuit": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 750000,
+    "score_mean": 4113.277777777778,
+    "soups_mean": 0.3888888888888889,
+    "timeouts_total": 0,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      },
+      "coordination_ring": {
+        "score_mean": 12339.833333333334,
+        "soups_mean": 1.1666666666666667
+      },
+      "counter_circuit": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 1000000,
+    "score_mean": 8281.333333333334,
+    "soups_mean": 0.7222222222222223,
+    "timeouts_total": 1,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 12276.833333333334,
+        "soups_mean": 1.0
+      },
+      "coordination_ring": {
+        "score_mean": 12567.166666666666,
+        "soups_mean": 1.1666666666666667
+      },
+      "counter_circuit": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 1250000,
+    "score_mean": 17071.222222222223,
+    "soups_mean": 1.6666666666666667,
+    "timeouts_total": 0,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 25116.5,
+        "soups_mean": 2.5
+      },
+      "coordination_ring": {
+        "score_mean": 26097.166666666668,
+        "soups_mean": 2.5
+      },
+      "counter_circuit": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 1500000,
+    "score_mean": 26501.88888888889,
+    "soups_mean": 2.611111111111111,
+    "timeouts_total": 1,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55264.0,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 24241.666666666668,
+        "soups_mean": 2.3333333333333335
+      },
+      "counter_circuit": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 1750000,
+    "score_mean": 31977.0,
+    "soups_mean": 3.1666666666666665,
+    "timeouts_total": 0,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55321.0,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 40610.0,
+        "soups_mean": 4.0
+      },
+      "counter_circuit": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 2000000,
+    "score_mean": 31581.666666666668,
+    "soups_mean": 3.111111111111111,
+    "timeouts_total": 0,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55321.0,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 39424.0,
+        "soups_mean": 3.8333333333333335
+      },
+      "counter_circuit": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 2250000,
+    "score_mean": 23816.38888888889,
+    "soups_mean": 2.3333333333333335,
+    "timeouts_total": 1,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55332.5,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 16116.666666666666,
+        "soups_mean": 1.5
+      },
+      "counter_circuit": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 2500000,
+    "score_mean": 31535.111111111113,
+    "soups_mean": 3.111111111111111,
+    "timeouts_total": 0,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55340.5,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 39264.833333333336,
+        "soups_mean": 3.8333333333333335
+      },
+      "counter_circuit": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 2750000,
+    "score_mean": 29338.44444444444,
+    "soups_mean": 2.888888888888889,
+    "timeouts_total": 1,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55351.0,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 32664.333333333332,
+        "soups_mean": 3.1666666666666665
+      },
+      "counter_circuit": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 3000000,
+    "score_mean": 29281.94444444444,
+    "soups_mean": 2.888888888888889,
+    "timeouts_total": 0,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55356.5,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 32489.333333333332,
+        "soups_mean": 3.1666666666666665
+      },
+      "counter_circuit": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 3250000,
+    "score_mean": 30501.611111111113,
+    "soups_mean": 3.0,
+    "timeouts_total": 0,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55351.0,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 36153.833333333336,
+        "soups_mean": 3.5
+      },
+      "counter_circuit": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 3500000,
+    "score_mean": 26099.38888888889,
+    "soups_mean": 2.5555555555555554,
+    "timeouts_total": 1,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55351.0,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 22947.166666666668,
+        "soups_mean": 2.1666666666666665
+      },
+      "counter_circuit": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 3750000,
+    "score_mean": 35904.11111111111,
+    "soups_mean": 3.555555555555556,
+    "timeouts_total": 0,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55351.0,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 47321.0,
+        "soups_mean": 4.666666666666667
+      },
+      "counter_circuit": {
+        "score_mean": 5040.333333333333,
+        "soups_mean": 0.5
+      }
+    }
+  },
+  {
+    "timesteps": 4000000,
+    "score_mean": 33603.666666666664,
+    "soups_mean": 3.3333333333333335,
+    "timeouts_total": 0,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55351.0,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 40408.666666666664,
+        "soups_mean": 4.0
+      },
+      "counter_circuit": {
+        "score_mean": 5051.333333333333,
+        "soups_mean": 0.5
+      }
+    }
+  },
+  {
+    "timesteps": 4250000,
+    "score_mean": 32183.66666666666,
+    "soups_mean": 3.1666666666666665,
+    "timeouts_total": 1,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55327.5,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 37648.166666666664,
+        "soups_mean": 3.6666666666666665
+      },
+      "counter_circuit": {
+        "score_mean": 3575.3333333333335,
+        "soups_mean": 0.3333333333333333
+      }
+    }
+  },
+  {
+    "timesteps": 4500000,
+    "score_mean": 28204.166666666668,
+    "soups_mean": 2.777777777777778,
+    "timeouts_total": 0,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55351.0,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 17568.166666666668,
+        "soups_mean": 1.6666666666666667
+      },
+      "counter_circuit": {
+        "score_mean": 11693.333333333334,
+        "soups_mean": 1.1666666666666667
+      }
+    }
+  },
+  {
+    "timesteps": 4750000,
+    "score_mean": 39965.77777777778,
+    "soups_mean": 3.944444444444444,
+    "timeouts_total": 1,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55351.0,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 54014.833333333336,
+        "soups_mean": 5.333333333333333
+      },
+      "counter_circuit": {
+        "score_mean": 10531.5,
+        "soups_mean": 1.0
+      }
+    }
+  },
+  {
+    "timesteps": 5000000,
+    "score_mean": 31174.44444444444,
+    "soups_mean": 3.0555555555555554,
+    "timeouts_total": 0,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55336.0,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 22740.333333333332,
+        "soups_mean": 2.1666666666666665
+      },
+      "counter_circuit": {
+        "score_mean": 15447.0,
+        "soups_mean": 1.5
+      }
+    }
+  },
+  {
+    "timesteps": 5250000,
+    "score_mean": 47862.444444444445,
+    "soups_mean": 4.722222222222222,
+    "timeouts_total": 0,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55351.0,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 45862.833333333336,
+        "soups_mean": 4.5
+      },
+      "counter_circuit": {
+        "score_mean": 42373.5,
+        "soups_mean": 4.166666666666667
+      }
+    }
+  },
+  {
+    "timesteps": 5500000,
+    "score_mean": 36080.0,
+    "soups_mean": 3.5555555555555554,
+    "timeouts_total": 1,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55351.0,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 25364.333333333332,
+        "soups_mean": 2.5
+      },
+      "counter_circuit": {
+        "score_mean": 27524.666666666668,
+        "soups_mean": 2.6666666666666665
+      }
+    }
+  },
+  {
+    "timesteps": 5750000,
+    "score_mean": 46938.166666666664,
+    "soups_mean": 4.611111111111111,
+    "timeouts_total": 0,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55351.0,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 31360.166666666668,
+        "soups_mean": 3.0
+      },
+      "counter_circuit": {
+        "score_mean": 54103.333333333336,
+        "soups_mean": 5.333333333333333
+      }
+    }
+  },
+  {
+    "timesteps": 6000000,
+    "score_mean": 48906.27777777778,
+    "soups_mean": 4.833333333333333,
+    "timeouts_total": 1,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55351.0,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 40578.333333333336,
+        "soups_mean": 4.0
+      },
+      "counter_circuit": {
+        "score_mean": 50789.5,
+        "soups_mean": 5.0
+      }
+    }
+  },
+  {
+    "timesteps": 6250000,
+    "score_mean": 49474.333333333336,
+    "soups_mean": 4.888888888888888,
+    "timeouts_total": 0,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55351.0,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 37281.0,
+        "soups_mean": 3.6666666666666665
+      },
+      "counter_circuit": {
+        "score_mean": 55791.0,
+        "soups_mean": 5.5
+      }
+    }
+  },
+  {
+    "timesteps": 6500000,
+    "score_mean": 54415.833333333336,
+    "soups_mean": 5.388888888888889,
+    "timeouts_total": 0,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55351.0,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 47465.0,
+        "soups_mean": 4.666666666666667
+      },
+      "counter_circuit": {
+        "score_mean": 60431.5,
+        "soups_mean": 6.0
+      }
+    }
+  },
+  {
+    "timesteps": 6750000,
+    "score_mean": 45816.555555555555,
+    "soups_mean": 4.5,
+    "timeouts_total": 1,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55351.0,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 30962.833333333332,
+        "soups_mean": 3.0
+      },
+      "counter_circuit": {
+        "score_mean": 51135.833333333336,
+        "soups_mean": 5.0
+      }
+    }
+  },
+  {
+    "timesteps": 7000000,
+    "score_mean": 52135.72222222222,
+    "soups_mean": 5.166666666666667,
+    "timeouts_total": 0,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55351.0,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 50459.0,
+        "soups_mean": 5.0
+      },
+      "counter_circuit": {
+        "score_mean": 50597.166666666664,
+        "soups_mean": 5.0
+      }
+    }
+  },
+  {
+    "timesteps": 7250000,
+    "score_mean": 43984.22222222222,
+    "soups_mean": 4.333333333333333,
+    "timeouts_total": 0,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55351.0,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 35407.5,
+        "soups_mean": 3.5
+      },
+      "counter_circuit": {
+        "score_mean": 41194.166666666664,
+        "soups_mean": 4.0
+      }
+    }
+  },
+  {
+    "timesteps": 7500000,
+    "score_mean": 56019.44444444444,
+    "soups_mean": 5.555555555555556,
+    "timeouts_total": 1,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55332.666666666664,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 42220.5,
+        "soups_mean": 4.166666666666667
+      },
+      "counter_circuit": {
+        "score_mean": 70505.16666666667,
+        "soups_mean": 7.0
+      }
+    }
+  },
+  {
+    "timesteps": 7750000,
+    "score_mean": 48492.61111111112,
+    "soups_mean": 4.777777777777778,
+    "timeouts_total": 0,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55351.0,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 34135.833333333336,
+        "soups_mean": 3.3333333333333335
+      },
+      "counter_circuit": {
+        "score_mean": 55991.0,
+        "soups_mean": 5.5
+      }
+    }
+  },
+  {
+    "timesteps": 8000000,
+    "score_mean": 50728.777777777774,
+    "soups_mean": 5.0,
+    "timeouts_total": 0,
+    "per_layout": {
+      "asymmetric_advantages": {
+        "score_mean": 55351.0,
+        "soups_mean": 5.5
+      },
+      "coordination_ring": {
+        "score_mean": 45992.666666666664,
+        "soups_mean": 4.5
+      },
+      "counter_circuit": {
+        "score_mean": 50842.666666666664,
+        "soups_mean": 5.0
+      }
+    }
+  }
+]
