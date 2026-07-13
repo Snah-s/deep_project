@@ -1,0 +1,50 @@
+[
+  {
+    "timesteps": 250000,
+    "score_mean": 26064.333333333332,
+    "soups_mean": 2.5,
+    "timeouts_total": 0
+  },
+  {
+    "timesteps": 500000,
+    "score_mean": 27298.5,
+    "soups_mean": 2.6666666666666665,
+    "timeouts_total": 0
+  },
+  {
+    "timesteps": 750000,
+    "score_mean": 17109.0,
+    "soups_mean": 1.6666666666666667,
+    "timeouts_total": 0
+  },
+  {
+    "timesteps": 1000000,
+    "score_mean": 33879.166666666664,
+    "soups_mean": 3.3333333333333335,
+    "timeouts_total": 0
+  },
+  {
+    "timesteps": 1250000,
+    "score_mean": 35380.333333333336,
+    "soups_mean": 3.5,
+    "timeouts_total": 0
+  },
+  {
+    "timesteps": 1500000,
+    "score_mean": 32000.666666666668,
+    "soups_mean": 3.1666666666666665,
+    "timeouts_total": 0
+  },
+  {
+    "timesteps": 1750000,
+    "score_mean": 30822.666666666668,
+    "soups_mean": 3.0,
+    "timeouts_total": 0
+  },
+  {
+    "timesteps": 2000000,
+    "score_mean": 38881.0,
+    "soups_mean": 3.8333333333333335,
+    "timeouts_total": 0
+  }
+]
