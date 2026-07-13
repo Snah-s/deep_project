@@ -194,8 +194,11 @@ class ScoreEvalCallback(BaseCallback):
         if score > self.best_score:
             self.best_score = score
             self.model.save(str(self.save_dir / "best_model"))
+            # También el .pt del entregable (torch puro), para no depender del zip al exportar.
+            from scripts.export_weights import save_deliverable
+            save_deliverable(self.model, str(self.save_dir / "best_model.pt"))
             if self.verbose:
-                print(f"[eval @ {self.num_timesteps}] NUEVO MEJOR {tag} -> best_model.zip")
+                print(f"[eval @ {self.num_timesteps}] NUEVO MEJOR {tag} -> best_model.zip + best_model.pt")
         elif self.verbose:
             print(f"[eval @ {self.num_timesteps}] {tag} (best={self.best_score:.1f})")
 

@@ -27,16 +27,9 @@ def build_net() -> nn.Sequential:
     )
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--checkpoint", required=True, help="ruta al .zip SB3 (sin extensión ok)")
-    ap.add_argument("--out", default="deliverable/weights/default.pt")
-    ap.add_argument("--verify-n", type=int, default=2000)
-    args = ap.parse_args()
-
-    from stable_baselines3 import PPO
-
-    sd = PPO.load(args.checkpoint, device="cpu").policy.state_dict()
+def policy_to_net(policy) -> nn.Sequential:
+    """Remapea el state_dict de una MlpPolicy SB3 (en memoria) al nn.Sequential entregable."""
+    sd = policy.state_dict()
     net = build_net()
     with torch.no_grad():
         net[0].weight.copy_(sd["mlp_extractor.policy_net.0.weight"])
@@ -46,9 +39,27 @@ def main() -> None:
         net[4].weight.copy_(sd["action_net.weight"])
         net[4].bias.copy_(sd["action_net.bias"])
     net.eval()
+    return net
+
+
+def save_deliverable(model, out: str) -> None:
+    """Guarda los pesos entregable (.pt torch puro) desde un PPO en memoria. Sin zip."""
+    torch.save(policy_to_net(model.policy).state_dict(), out)
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--checkpoint", required=True, help="ruta al .zip SB3 (sin extensión ok)")
+    ap.add_argument("--out", default="deliverable/weights/default.pt")
+    ap.add_argument("--verify-n", type=int, default=2000)
+    args = ap.parse_args()
+
+    from stable_baselines3 import PPO
+
+    model = PPO.load(args.checkpoint, device="cpu")
+    net = policy_to_net(model.policy)
 
     # Verificación: argmax(net) == predict determinista de SB3.
-    model = PPO.load(args.checkpoint, device="cpu")
     rng = np.random.default_rng(0)
     mism = 0
     with torch.no_grad():
