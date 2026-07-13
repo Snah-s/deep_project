@@ -8,3 +8,8 @@ micromamba run -n overcooked python scripts/export_weights.py \
 # 2) test de generalización en ESTA máquina (mira que la columna `solo` suba en held-out)
 micromamba run -n overcooked python tools/test_general.py \
   --weights deliverable/weights/default.pt
+
+  nohup micromamba run -n overcooked python -m training.train_ppo \
+  --config training/configs/esc_general.yaml \
+  --n-envs 40 --device cpu \
+  > train_general.log 2>&1 &
