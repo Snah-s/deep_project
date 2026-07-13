@@ -12,3 +12,9 @@ torch
 gymnasium
 pyyaml
 tqdm
+# scipy: dep transitiva de overcooked-ai (planning.search); se importa al cargar el env.
+scipy
+# imageio: import top-level de overcooked/src/rendering.py (lo carga el harness en cada run).
+imageio
+# pygame: rendering en ventana (tools/play.py). Import perezoso; opcional para entrenar.
+pygame

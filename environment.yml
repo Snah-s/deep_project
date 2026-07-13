@@ -27,6 +27,8 @@ dependencies:
   - matplotlib            # curvas de EXPERIMENTS.md y renders del harness
   - pytest                # gates de las etapas
   - pygame                # rendering de la plantilla del profesor (play/collect_demos)
+  - scipy                 # transitiva de overcooked-ai (planning.search); explícita por si no resuelve
+  - imageio               # import top-level de src/rendering.py (template vendorizado, no viene con el pip)
   - pip:
       - overcooked-ai            # entorno oficial (PyPI); la plantilla lo importa
       - stable-baselines3~=2.9   # PPO del camino principal
