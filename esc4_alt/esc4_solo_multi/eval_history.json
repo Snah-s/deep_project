@@ -1,0 +1,402 @@
+[
+  {
+    "timesteps": 250002,
+    "score_mean": 0.0,
+    "soups_mean": 0.0,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      },
+      "coordination_ring": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 500004,
+    "score_mean": 16232.388888888889,
+    "soups_mean": 1.611111111111111,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 48697.166666666664,
+        "soups_mean": 4.833333333333333
+      },
+      "coordination_ring": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 750006,
+    "score_mean": 15734.833333333334,
+    "soups_mean": 1.5555555555555556,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 47204.5,
+        "soups_mean": 4.666666666666667
+      },
+      "coordination_ring": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 1000008,
+    "score_mean": 14688.055555555555,
+    "soups_mean": 1.4444444444444444,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 44064.166666666664,
+        "soups_mean": 4.333333333333333
+      },
+      "coordination_ring": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 1250010,
+    "score_mean": 15142.77777777778,
+    "soups_mean": 1.5,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 45428.333333333336,
+        "soups_mean": 4.5
+      },
+      "coordination_ring": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 1500012,
+    "score_mean": 16817.5,
+    "soups_mean": 1.6666666666666667,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 50452.5,
+        "soups_mean": 5.0
+      },
+      "coordination_ring": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 1750014,
+    "score_mean": 16824.611111111113,
+    "soups_mean": 1.6666666666666667,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 50473.833333333336,
+        "soups_mean": 5.0
+      },
+      "coordination_ring": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 2000016,
+    "score_mean": 16799.277777777777,
+    "soups_mean": 1.6666666666666667,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 50397.833333333336,
+        "soups_mean": 5.0
+      },
+      "coordination_ring": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 2250018,
+    "score_mean": 16820.777777777777,
+    "soups_mean": 1.6666666666666667,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 50462.333333333336,
+        "soups_mean": 5.0
+      },
+      "coordination_ring": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 2500020,
+    "score_mean": 16812.388888888887,
+    "soups_mean": 1.6666666666666667,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 50437.166666666664,
+        "soups_mean": 5.0
+      },
+      "coordination_ring": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 2750022,
+    "score_mean": 22055.333333333332,
+    "soups_mean": 2.1666666666666665,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 48862.833333333336,
+        "soups_mean": 4.833333333333333
+      },
+      "coordination_ring": {
+        "score_mean": 17303.166666666668,
+        "soups_mean": 1.6666666666666667
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 3000024,
+    "score_mean": 26431.38888888889,
+    "soups_mean": 2.611111111111111,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 50447.0,
+        "soups_mean": 5.0
+      },
+      "coordination_ring": {
+        "score_mean": 28847.166666666668,
+        "soups_mean": 2.8333333333333335
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 3250026,
+    "score_mean": 26983.5,
+    "soups_mean": 2.6666666666666665,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 50379.0,
+        "soups_mean": 5.0
+      },
+      "coordination_ring": {
+        "score_mean": 30571.5,
+        "soups_mean": 3.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 3500028,
+    "score_mean": 27044.666666666668,
+    "soups_mean": 2.6666666666666665,
+    "timeouts_total": 1,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 50481.0,
+        "soups_mean": 5.0
+      },
+      "coordination_ring": {
+        "score_mean": 30653.0,
+        "soups_mean": 3.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 3750030,
+    "score_mean": 27614.55555555556,
+    "soups_mean": 2.722222222222222,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 50481.0,
+        "soups_mean": 5.0
+      },
+      "coordination_ring": {
+        "score_mean": 32362.666666666668,
+        "soups_mean": 3.1666666666666665
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 4000032,
+    "score_mean": 29204.166666666668,
+    "soups_mean": 2.888888888888889,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 50516.333333333336,
+        "soups_mean": 5.0
+      },
+      "coordination_ring": {
+        "score_mean": 37096.166666666664,
+        "soups_mean": 3.6666666666666665
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 4250034,
+    "score_mean": 28624.27777777778,
+    "soups_mean": 2.8333333333333335,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 50450.5,
+        "soups_mean": 5.0
+      },
+      "coordination_ring": {
+        "score_mean": 35422.333333333336,
+        "soups_mean": 3.5
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 4500036,
+    "score_mean": 27561.666666666668,
+    "soups_mean": 2.722222222222222,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 50413.0,
+        "soups_mean": 5.0
+      },
+      "coordination_ring": {
+        "score_mean": 32272.0,
+        "soups_mean": 3.1666666666666665
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 4750038,
+    "score_mean": 27042.888888888887,
+    "soups_mean": 2.6666666666666665,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 50447.666666666664,
+        "soups_mean": 5.0
+      },
+      "coordination_ring": {
+        "score_mean": 30681.0,
+        "soups_mean": 3.0
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  },
+  {
+    "timesteps": 5000040,
+    "score_mean": 28119.22222222222,
+    "soups_mean": 2.777777777777778,
+    "timeouts_total": 0,
+    "per_layout": {
+      "cramped_room": {
+        "score_mean": 50476.5,
+        "soups_mean": 5.0
+      },
+      "coordination_ring": {
+        "score_mean": 33881.166666666664,
+        "soups_mean": 3.3333333333333335
+      },
+      "counter_circuit_o_1order": {
+        "score_mean": 0.0,
+        "soups_mean": 0.0
+      }
+    }
+  }
+]
