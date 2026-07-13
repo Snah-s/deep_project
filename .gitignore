@@ -6,3 +6,10 @@ data/demonstrations/
 docs/*.pdf
 .pytest_cache/
 .venv/
+
+# Artefactos de entrenamiento (pesados; regenerables desde training/configs/*.yaml).
+# El entregable vive en deliverable/ (torch puro), no aquí.
+/esc*/
+
+# Diseño interno del proyecto: no exponer en el repo público.
+PLAN.md

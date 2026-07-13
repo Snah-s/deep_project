@@ -1,84 +1,121 @@
-# Proyecto: Overcooked
+# Overcooked-AI — Agente RL para los 3 escenarios de la competencia
 
-Basado en https://github.com/HumanCompatibleAI/overcooked_ai
+Agente de aprendizaje por refuerzo (PPO) que coopera con el compañero scripted
+`greedy_full_task` en los tres escenarios evaluados de la competencia. **Un único modelo**
+(`deliverable/weights/default.pt`, torch puro) cubre los tres.
 
-## Grabaciones
+Basado en la plantilla de https://github.com/HumanCompatibleAI/overcooked_ai (incluida en
+`overcooked/`).
 
-Buscar repositorios en los cuales ya hay data existente compatible con el repositorio base.
+## Los 3 escenarios
 
-## Agentes
+| # | Layout | Compañero |
+|---|--------|-----------|
+| 1 | `asymmetric_advantages` | `greedy_full_task` |
+| 2 | `coordination_ring` | `greedy_full_task` + sticky actions |
+| 3 | `counter_circuit` | `greedy_full_task` + sticky + random actions |
 
-Nota que el juego cuenta con dos agentes: uno es automático y el otro es controlado por ustedes.
+## Resultados (harness oficial, 3 seeds, swap activado)
 
-El agente automático es configurado en el archivo `collect_demonstrations.yaml`, en `policies.agent_0.name: greedy_full_task`. Las opciones de agentes disponibles son: `stay`, `random_motion` y `greedy_full_task`. Asigna de manera aleatoria esos agentes en sus grabaciones.
+| Escenario | greedy limpio | perturbación moderada | agresiva (sticky 0.4) |
+|-----------|:---:|:---:|:---:|
+| 1 · asymmetric | 5.5 | 5.5 | 5.5 |
+| 2 · coordination | 8.0 | 5.8 | 3.4 |
+| 3 · counter | 6.0–12 | 5.8 | 5.6 |
 
-## Escenarios
+Puntuación = sopas entregadas (cada sopa = +20 sparse). Latencia `act()`: **p99 ≈ 0.07 ms**
+(límite 100 ms) → 0 timeouts.
 
-Como fue indicado previamente, cada grupo debe recolectar datos en 10 escenarios distintos. Los disponibles en el repositorio oficial son:
+## Enfoque
 
-- `asymmetric_advantages`
-- `coordination_ring`
-- `counter_circuit`
-- `cramped_room`
-- `forced_coordination`
-- `large_room`
-- `simple_o`
-- `simple_tomato`
-- `small_corridor`
-- `soup_coordination`
-- `tutorial_0`
-- `tutorial_1`
-- `tutorial_2`
-- `tutorial_3`
+- **PPO ego/alt**: un agente (ego) entrena con Stable-Baselines3 PPO contra el compañero
+  embebido en el entorno (`envs/ego_env.py`). El mejor modelo se elige con el **harness
+  oficial** (score de la competencia), no con la reward de entrenamiento.
+- **Observación** `featurized` → vector `(96,)` por agente (constante en todos los layouts).
+  Política `MlpPolicy` 2×256 tanh.
+- **Reward shaping por eventos** (+3 ingrediente en olla, +3 recoger plato, +5 recoger sopa)
+  anelado a 0, más **nav-shaping** (`envs/nav_shaping.py`): recompensa densa potential-based
+  por acercarse al siguiente subobjetivo. Fue la pieza clave para resolver `counter_circuit`
+  (anillo largo donde la reward esparsa es inalcanzable por exploración aleatoria).
+- **Compañero de entrenamiento**: mezcla de `greedy_full_task` a distintos niveles de
+  perturbación (sticky/random) que cubre los 3 escenarios y endurece la robustez.
+- **Modelo final** (`esc_enhanced.yaml`): fine-tune del generalista contra sticky agresivo
+  en los 3 layouts a la vez, para un único checkpoint robusto.
 
-Puede usar cualquiera de ellos o proponer su propio escenario (opción recomendada). Si crean un escenario custom, deben guardar también el archivo `.layout` correspondiente.
+## Estructura
 
-## Dependencias
+```
+deliverable/          Entregable final (torch puro, sin SB3)
+  student_agent.py       clase StudentAgent: act(obs)->int
+  weights/default.pt     pesos de la política (verificados idénticos a SB3)
+envs/                 Entorno ego/alt, compañeros, reward + nav shaping
+training/             PPO, callbacks, configs (training/configs/*.yaml)
+evaluation/           harness oficial + selfcheck (GATE 7)
+scripts/              setup + export_weights (SB3 -> torch)
+overcooked/           Plantilla del profesor (runner, policies, rendering)
+colab/                Notebook para entrenar en Colab
+```
+
+## Reproducción
+
+### 1. Entorno
+
+**Vertiente micromamba (Linux/cluster/local):**
+```bash
+./setup.sh                       # crea el env 'overcooked' desde environment.yml
+micromamba run -n overcooked python -m pytest tests/test_env_smoke.py -q   # GATE 0
+```
+
+**Vertiente pip/Colab:** ver `colab/run_all.ipynb` (instala con `numpy<2`, **reiniciar
+runtime** una vez). Todas las deps también en `requirements.txt`.
+
+> Regla inviolable: **`numpy<2`** (overcooked-ai usa `np.Inf`, removido en NumPy 2.0).
+> No se necesita GPU: el cuello de botella es el CPU (env stepping). Usar `--device cpu` y
+> `--n-envs` = nº de cores físicos.
+
+### 2. Entrenar el modelo final
 
 ```bash
-pip install overcooked-ai
-pip install "numpy<2"
-pip install PyYAML>=6.0 Pillow>=10.0 imageio>=2.31
+# Generalista base (3 layouts, nav-shaping)
+micromamba run -n overcooked python -m training.train_ppo \
+  --config training/configs/esc_scenarios.yaml \
+  --nav-shaping-coef 0.5 --experiment-name esc_scenarios_nav \
+  --device cpu --n-envs 40 --vec subproc
+
+# Endurecido vs sticky agresivo (warm-start del anterior) -> MODELO FINAL
+micromamba run -n overcooked python -m training.train_ppo \
+  --config training/configs/esc_enhanced.yaml \
+  --init-from esc_scenarios_nav_multi/best_model \
+  --device cpu --n-envs 40 --vec subproc
 ```
 
-## Uso
+Artefactos en `esc_enhanced_multi/`: `best_model.zip` (mejor por score oficial),
+`eval_history.json`, `config_used.yaml`.
 
-### Run random
+### 3. Empaquetar el entregable (SB3 → torch puro)
 
 ```bash
-python -m src.run_game --config configs/play.yaml
+micromamba run -n overcooked python scripts/export_weights.py \
+  --checkpoint esc_enhanced_multi/best_model \
+  --out deliverable/weights/default.pt
 ```
 
-### Create dataset
+Verifica que el `state_dict` extraído reproduce la política SB3 (argmax idéntico) antes de
+guardarlo.
+
+### 4. Autotest — GATE 7
 
 ```bash
-python -m src.collect_demonstrations --config configs/collect_demonstrations.yaml
+micromamba run -n overcooked python -m evaluation.selfcheck
 ```
 
-## Agente autónomo
+Corre el entregable por el runner del profesor en los 3 escenarios (vs greedy, 3 seeds,
+swap) y mide la latencia. Verde si sopas ≥ 1 en cada escenario y p99 < 20 ms.
 
-Después se debe diseñar un agente autónomo capaz de colaborar con otro agente en el entorno Overcooked-AI. El objetivo es preparar y entregar la mayor cantidad posible de sopas dentro de un episodio limitado por tiempo.
+## El entregable
 
-Cada grupo entregará un único agente para jugar Overcooked-AI. En cada escenario, el agente será evaluado junto con un compañero definido para esa ronda. El objetivo es obtener el mayor puntaje posible preparando y entregando sopas.
-
-Cada escenario tendrá tres intentos con tres seeds distintos. El puntaje oficial del escenario será el promedio de los tres intentos. En algunos escenarios se evaluará también el cambio de rol del agente.
-
-### Score
-
-```
-Score = 10000 * sopas + 10 * (horizon - timestep de última sopa) + (horizon - timestep de primera sopa) - penalización
-```
-
-Si no se entrega ninguna sopa, el score del intento será `0`.
-
-### Penalización
-
-```
-Penalización = min(100 * timeouts, 5000)
-```
-
-El número de sopas es el factor principal. El tiempo funciona como criterio de desempate entre agentes que entregan la misma cantidad de sopas. Las penalizaciones solo afectan errores técnicos de ejecución, como exceder el tiempo máximo permitido para decidir una acción.
-
-Los escenarios 1, 2 y 3 serán conocidos. Los escenarios 4, 5 y 6 serán nuevos layouts y serán revelados durante la competencia.
-
-Cada escenario otorga una nota máxima. El grupo conserva la nota más alta alcanzada.
+`deliverable/student_agent.py` es autocontenido: solo depende de `torch` y `numpy`.
+Reconstruye la MLP `96→256→256→6` (tanh, argmax) y carga `weights/default.pt` con ruta
+relativa a `__file__`. Todo `act()` va en `try/except` → ante cualquier fallo devuelve `4`
+(stay) para nunca romper el runner. Un solo modelo para los 3 escenarios; si el grader pasa
+el layout en `config` y existe `weights/<layout>.pt`, se prefiere, si no `default.pt`.
