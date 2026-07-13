@@ -1,0 +1,80 @@
+# esc_coop4.yaml — UN modelo para los 4 escenarios vía self-play E3T-lite.
+#
+# Añade forced_coordination (coordinación OBLIGADA por muro: handoffs) al pool. Greedy
+# no sabe hacer handoffs (es receptor, no emisor), así que forced_coordination NO se
+# aprende contra greedy: se aprende contra el propio ego (componente `self` de la mezcla).
+# El ego coordina con copias recientes de sí mismo -> aprende AMBOS lados (emisor/receptor)
+# gracias a randomize_index. Los otros 3 layouts se mantienen robustos porque la mezcla
+# también incluye greedy variado (ZSC).
+#
+# FEATURES NUEVAS: cook_time normalizado (envs/features.py). Los checkpoints viejos esperan
+# cook_time crudo -> NO se puede warm-start desde ellos. init_from: null (desde cero).
+# Tras entrenar: re-exportar TODOS los pesos y activar la normalización en el entregable
+# (deliverable/student_agent.py) -- ver scripts/export_weights.py.
+
+experiment_name: esc_coop4
+layout:
+  - asymmetric_advantages
+  - coordination_ring
+  - counter_circuit
+  - forced_coordination        # coordinación obligada: solo se aprende vía `self`
+init_from: null                # features nuevas -> desde cero (no warm-start de pesos crudos)
+
+nav_shaping_coef: 0.5          # ayuda a counter; en forced_coord es inocuo (olla inalcanzable -> 0)
+
+partner_spec:
+  type: mixture
+  specs:
+    - {type: self, eps: [0.2, 0.5]}          # E3T: ε·ego + (1-ε)·random -> coordinación (forced_coord)
+    - {type: greedy}                          # scripted del profesor (Esc.1)
+    - {type: greedy, sticky_p: [0.0, 0.4]}    # greedy titubeante
+    - {type: greedy, eps: [0.0, 0.4]}         # greedy ruidoso (Esc.3)
+    - {type: random_motion}                   # compañero que estorba
+    - {type: stay}                            # compañero pasivo
+  probs: [0.45, 0.2, 0.13, 0.1, 0.07, 0.05]   # más peso a `self`: forced_coord lo necesita
+
+selfplay_refresh_freq: 100000
+
+randomize_index: true          # el ego juega ambos lados del muro
+old_dynamics: true
+horizon: 250
+
+total_timesteps: 12000000      # forced_coord es caro; +50% sobre esc_robust
+n_envs: 8                      # override en cluster: --n-envs 40
+vec: subproc
+checkpoint_freq: 500000
+device: auto
+seed: 0
+
+ppo:
+  policy: MlpPolicy
+  net_arch: [256, 256]
+  activation: tanh
+  learning_rate: 3.0e-4
+  lr_schedule: linear
+  ent_coef: 0.03
+  gamma: 0.99
+  gae_lambda: 0.95
+  n_steps: 1024
+  batch_size: 2048
+  n_epochs: 8
+  clip_range: 0.2
+  vf_coef: 0.5
+  max_grad_norm: 0.5
+
+shaping:
+  anneal_fraction: 0.6
+
+eval:
+  freq: 250000
+  seeds: [67, 68, 69]
+  partner_spec: {type: greedy}
+  # forced_coordination vs greedy solo puntúa cuando el ego es EMISOR (role-swap ~50%);
+  # es señal parcial. La competencia real de forced_coord es self-play (medir aparte).
+  partner_by_layout:
+    asymmetric_advantages: {type: greedy}
+    coordination_ring:     {type: greedy, sticky_p: 0.35}
+    counter_circuit:       {type: greedy, sticky_p: 0.25, eps: 0.15}
+    forced_coordination:   {type: greedy}
+
+output_dir: outputs/esc_coop4

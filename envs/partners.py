@@ -214,7 +214,8 @@ class CheckpointAgent(Agent):
             self._lazy_load()
         if self._env is None:
             raise RuntimeError("CheckpointAgent no está enlazado a un env (llama bind_env).")
-        obs = np.asarray(self._env.featurize_state_mdp(state)[self.agent_index], dtype=np.float32)
+        from envs.features import normalize_obs
+        obs = normalize_obs(self._env.featurize_state_mdp(state)[self.agent_index])
         action_idx, _ = self._model.predict(obs, deterministic=self.deterministic)
         action_idx = int(np.asarray(action_idx).item())
         return action_index_to_overcooked_action(action_idx), {"policy_name": "checkpoint", "action_index": action_idx}
