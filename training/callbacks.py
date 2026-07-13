@@ -118,11 +118,15 @@ class ScoreEvalCallback(BaseCallback):
         horizon: int = 250,
         deterministic: bool = True,
         verbose: int = 1,
+        partner_by_layout: dict[str, dict] | None = None,
     ):
         super().__init__(verbose)
         # Acepta un layout o un pool (generalista multi-layout, p.ej. Esc.4).
         self.layouts = [layouts] if isinstance(layouts, str) else list(layouts)
         self.partner_spec = partner_spec
+        # Opcional: compañero POR layout (para emparejar cada escenario de la competencia,
+        # p.ej. counter_circuit vs greedy+sticky+random). Si falta uno, usa partner_spec.
+        self.partner_by_layout = partner_by_layout or {}
         self.seeds = list(seeds)
         self.eval_freq = int(eval_freq)
         self.save_dir = Path(save_dir)
@@ -146,7 +150,7 @@ class ScoreEvalCallback(BaseCallback):
                 lay: evaluate(
                     agent_ctor=lambda: student,
                     layout=lay,
-                    partner_spec=self.partner_spec,
+                    partner_spec=self.partner_by_layout.get(lay, self.partner_spec),
                     seeds=self.seeds,
                     horizon=self.horizon,
                 )

@@ -1,0 +1,46 @@
+# Diagnóstico: agente E3T (esc_robust) en counter_circuit_o_1order vs greedy.
+# Layout tipo anillo con isla central: onions abajo, pots arriba, dish izq, serve der.
+seed: 67
+mode: debug
+environment:
+  layout_name: counter_circuit_o_1order
+  layout_file: null
+  horizon: 250
+  old_dynamics: true
+policies:
+  agent_0:                                  # NUESTRO agente (azul)
+    type: python_class
+    path: tools/sb3_student_agent.py
+    class_name: StudentAgent
+    name: esc_robust
+    config:
+      checkpoint: esc_robust/esc_robust_multi/best_model
+    random_action_prob: 0.0
+    max_action_time_ms: 100
+    invalid_action: stay
+    timeout_action: stay
+  agent_1:                                  # compañero competente (verde)
+    type: builtin
+    name: greedy_full_task
+    random_action_prob: 0.0
+    max_action_time_ms: 100
+    invalid_action: stay
+    timeout_action: stay
+execution:
+  num_episodes: 1
+  episode_seeds: [67]
+  swap_agent_positions: false
+observation:
+  type: featurized
+  include_agent_index: true
+rendering:
+  mode: window
+  fps: 8
+  window_caption: "esc_robust en counter_circuit (azul=nuestro)"
+  save_gif: true
+  gif_path: outputs/counter_diag.gif
+logging:
+  output_dir: outputs/counter_diag_run
+  save_step_log: false
+  save_episode_summary: true
+  save_trajectory_pickle: false

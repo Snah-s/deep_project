@@ -238,6 +238,7 @@ def train(cfg: dict[str, Any]) -> dict[str, Any]:
         eval_freq=int(cfg["eval"]["freq"]),
         save_dir=save_dir,
         horizon=int(cfg["horizon"]),
+        partner_by_layout=cfg["eval"].get("partner_by_layout"),
     )
     anneal_cb = ShapingAnnealCallback()
 
