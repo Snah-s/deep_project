@@ -1,0 +1,71 @@
+# esc_enhanced.yaml — UN SOLO MODELO robusto para los 3 escenarios (requisito: 1 checkpoint).
+#
+# Parte del modelo único que ya cubre los 3 (esc_scenarios_nav) y lo ENDURECE contra
+# sticky agresivo en los 3 layouts a la vez. El flanco débil era coordination_ring vs
+# sticky fuerte (8.0->2.8 @sticky0.4); asymmetric y counter ya aguantaban. Este run sube
+# el peso de sticky agresivo en el partner + nav-shaping, para cerrar el flanco SIN perder
+# los otros dos, en un único modelo.
+#
+# Warm-start (recomendado, es un fine-tune del flanco sticky, no reaprender):
+#   --init-from esc_scenarios_nav_multi/best_model
+
+experiment_name: esc_enhanced
+layout:
+  - asymmetric_advantages
+  - coordination_ring
+  - counter_circuit
+init_from: null                # recomendado: --init-from esc_scenarios_nav_multi/best_model
+
+nav_shaping_coef: 0.5          # navegación en counter + rodear al compañero congelado en coord
+
+# Partner que cubre los 3 escenarios CON sticky agresivo bien representado.
+partner_spec:
+  type: mixture
+  specs:
+    - {type: greedy}                                        # Esc.1 limpio
+    - {type: greedy, sticky_p: [0.3, 0.6]}                  # sticky AGRESIVO (endurece coord)
+    - {type: greedy, sticky_p: [0.0, 0.3]}                  # sticky moderado
+    - {type: greedy, sticky_p: [0.2, 0.5], eps: [0.0, 0.3]} # Esc.3 sticky+random
+  probs: [0.2, 0.3, 0.2, 0.3]
+
+randomize_index: true
+old_dynamics: true
+horizon: 250
+
+total_timesteps: 6000000      # warm-start -> converge rápido; endurece sin reaprender
+n_envs: 8                     # override en cluster: --n-envs 40
+vec: subproc
+checkpoint_freq: 500000
+device: auto
+seed: 0
+
+ppo:
+  policy: MlpPolicy
+  net_arch: [256, 256]
+  activation: tanh
+  learning_rate: 3.0e-4
+  lr_schedule: linear
+  ent_coef: 0.03              # con warm-start, menos exploración
+  gamma: 0.99
+  gae_lambda: 0.95
+  n_steps: 1024
+  batch_size: 2048
+  n_epochs: 8
+  clip_range: 0.2
+  vf_coef: 0.5
+  max_grad_norm: 0.5
+
+shaping:
+  anneal_fraction: 0.6
+
+eval:
+  freq: 250000
+  seeds: [67, 68, 69]
+  partner_spec: {type: greedy}          # fallback
+  # Selecciona best por robustez: coord vs sticky agresivo, counter vs sticky+random.
+  partner_by_layout:
+    asymmetric_advantages: {type: greedy}
+    coordination_ring:     {type: greedy, sticky_p: 0.35}
+    counter_circuit:       {type: greedy, sticky_p: 0.25, eps: 0.15}
+
+output_dir: outputs/esc_enhanced
