@@ -110,6 +110,7 @@ def _make_single_env(cfg: dict[str, Any], shaping_schedule: ShapingSchedule | No
         shaping_schedule=shaping_schedule,
         randomize_index=bool(cfg["randomize_index"]),
         old_dynamics=bool(cfg["old_dynamics"]),
+        nav_shaping_coef=float(cfg.get("nav_shaping_coef", 0.0)),
     )
     return Monitor(env)
 

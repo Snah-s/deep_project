@@ -49,16 +49,25 @@ class OvercookedEgoEnv(gym.Env):
         shaping_schedule: ShapingSchedule | None = None,
         randomize_index: bool = True,
         old_dynamics: bool = True,
+        nav_shaping_coef: float = 0.0,
     ):
         super().__init__()
         self.partner_factory = partner_factory
         self.horizon = int(horizon)
         self.shaping_schedule = shaping_schedule
         self.randomize_index = bool(randomize_index)
+        self.nav_shaping_coef = float(nav_shaping_coef)
 
         self._env_config = self._build_env_config(layout_name_or_file, horizon, old_dynamics)
         # El MDP se construye una vez; cada episodio hace reset(regen_mdp=False).
         self.env = build_env(self._env_config)
+
+        # Shaping de navegación opcional (fix counter_circuit). Se anexa al shaped reward
+        # y se anela con el mismo coef. Ver envs/nav_shaping.py.
+        self._nav = None
+        if self.nav_shaping_coef > 0.0:
+            from envs.nav_shaping import NavPotential
+            self._nav = NavPotential(self.env.mdp)
 
         self.observation_space = spaces.Box(
             low=-np.inf, high=np.inf, shape=(OBS_DIM,), dtype=np.float32
@@ -111,6 +120,9 @@ class OvercookedEgoEnv(gym.Env):
             self.ego_index = 0
         self.partner_index = 1 - self.ego_index
 
+        if self._nav is not None:
+            self._nav.reset(self.ego_index)
+
         self.partner = self.partner_factory()
         # OJO: Agent.reset() de overcooked limpia agent_index y mdp, así que va PRIMERO.
         if hasattr(self.partner, "reset"):
@@ -144,7 +156,9 @@ class OvercookedEgoEnv(gym.Env):
         ego_shaped = float(shaped_by_agent[self.ego_index])
 
         coef = self._current_coef()
-        reward = ego_sparse + coef * ego_shaped
+        # Navegación: recompensa densa de acercarse al subobjetivo (anelada con el shaping).
+        nav_reward = self._nav.step_reward(self.env.state) if self._nav is not None else 0.0
+        reward = ego_sparse + coef * (ego_shaped + self.nav_shaping_coef * nav_reward)
 
         # Contar sopas del episodio a partir de la sparse total (+20 por sopa, PLAN).
         soups_this_step = int(round(float(sparse_total) / DELIVERY_REWARD))

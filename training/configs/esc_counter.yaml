@@ -1,0 +1,62 @@
+# esc_counter.yaml — ESPECIALISTA de counter_circuit (Escenario 3) con nav-shaping.
+#
+# counter_circuit es el peor caso: ni greedy+greedy ni greedy-solo logran una sopa
+# (se bloquean / no navegan el anillo largo con un solo dispensador de cebolla). El
+# compañero greedy del Esc.3 NO cocina -> nuestro agente debe hacer el ciclo casi solo.
+#
+# Fix clave: `nav_shaping_coef` activa la recompensa densa de NAVEGACIÓN (acercarse al
+# subobjetivo), que rompe el interact-spam y guía el recorrido del anillo. Ver
+# envs/nav_shaping.py. Es potential-based -> no farmeable.
+
+experiment_name: esc_counter
+layout: counter_circuit
+init_from: null
+
+nav_shaping_coef: 0.5          # escala del shaping de navegación (0 = off). Anelado con el shaping.
+
+# Compañero: greedy perturbado del Esc.3 (sticky+random) + algo de 'stay' para que el
+# agente practique el ciclo solo sin que el greedy le tapone el anillo todo el tiempo.
+partner_spec:
+  type: mixture
+  specs:
+    - {type: greedy, sticky_p: [0.0, 0.4], eps: [0.0, 0.3]}  # Esc.3 exacto
+    - {type: greedy}                                          # greedy limpio
+    - {type: stay}                                            # práctica solo sin estorbo
+  probs: [0.5, 0.25, 0.25]
+
+randomize_index: true
+old_dynamics: true
+horizon: 250
+
+total_timesteps: 10000000     # 1e7: el layout más difícil, más presupuesto
+n_envs: 8                     # override en cluster: --n-envs 40
+vec: subproc
+checkpoint_freq: 500000
+device: auto
+seed: 0
+
+ppo:
+  policy: MlpPolicy
+  net_arch: [256, 256]
+  activation: tanh
+  learning_rate: 3.0e-4
+  lr_schedule: linear
+  ent_coef: 0.05              # exploración alta: hay que recorrer el anillo, no plantarse
+  gamma: 0.99
+  gae_lambda: 0.95
+  n_steps: 1024
+  batch_size: 2048
+  n_epochs: 8
+  clip_range: 0.2
+  vf_coef: 0.5
+  max_grad_norm: 0.5
+
+shaping:
+  anneal_fraction: 0.7         # guía de navegación durante más tiempo (layout difícil)
+
+eval:
+  freq: 250000
+  seeds: [67, 68, 69]
+  partner_spec: {type: greedy, sticky_p: 0.25, eps: 0.15}   # compañero del Esc.3 (magnitud asumida)
+
+output_dir: outputs/esc_counter
